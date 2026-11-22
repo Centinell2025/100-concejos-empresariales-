@@ -8,7 +8,10 @@
 
 ## Full description
 
-See your business more clearly with Beacon Business, an offline workspace for everyday business organization.
+See your business more clearly with Beacon Business, an offline workspace for small businesses, entrepreneurs and independent professionals.
+
+GET STARTED WITH CONFIDENCE
+A built-in introduction explains what to enter, where to work and how to read your indicators, with practical steps and a cash-flow example.
 
 KEEP TRACK OF CASH
 Record income received and expenses paid. View monthly cash totals, net cash results and cash margin, plus a six-month chart and a table of the underlying amounts. All financial entries use US dollars (USD).

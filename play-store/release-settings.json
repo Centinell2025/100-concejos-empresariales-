@@ -14,7 +14,7 @@
     "ES",
     "CA"
   ],
-  "countrySelectionStatus": "Requested settings; must be selected in Google Play Console",
+  "countrySelectionStatus": "Confirmed in Google Play production: only US, ES and CA",
   "category": "BUSINESS",
   "containsAds": false,
   "inAppPurchases": false,
@@ -27,5 +27,33 @@
     "currency": "USD",
     "amount": "9.99"
   },
-  "priceConfigurationStatus": "Selected by owner; not yet configured in Google Play Console"
+  "priceConfigurationStatus": "Saved in Google Play Console",
+  "googlePlayAppId": "4974645545501243182",
+  "regionalPrices": {
+    "US": {
+      "currency": "USD",
+      "amount": "9.99"
+    },
+    "ES": {
+      "currency": "EUR",
+      "amount": "10.99"
+    },
+    "CA": {
+      "currency": "CAD",
+      "amount": "13.99"
+    }
+  },
+  "targetAudience": "18 and over",
+  "contentRatings": {
+    "ESRB": "Everyone",
+    "PEGI": "3"
+  },
+  "dataSafety": "No developer collection or sharing; records stored on device",
+  "traderStatus": "Inherited trader status confirmed with owner approval; optional Terms URL blank",
+  "storeListingLanguage": "en-US",
+  "storeListingScreenshots": 5,
+  "aiAssetLabels": "Applied to app icon, feature graphic and all five interface captures",
+  "androidDeviceTesting": "Not yet performed; browser UI screenshots are not Android-device test evidence",
+  "advertisingId": false,
+  "setupStatus": "Initial configuration completed; release validated and saved; explicit owner authorization requested for final review submission"
 }
