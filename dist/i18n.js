@@ -1,5 +1,6 @@
 const messages = {};
 const messageRows = `
+privacy|Política de privacidad|Privacy policy|Informativa sulla privacy
 appTitle|Beacon · Gestión empresarial|Beacon · Business management|Beacon · Gestione aziendale
 learn|APRENDE · APLICA · CRECE|LEARN · APPLY · GROW|IMPARA · APPLICA · CRESCI
 tipsHeading|100 consejos. Nuevas posibilidades.|100 tips. New possibilities.|100 consigli. Nuove possibilità.
@@ -14,6 +15,7 @@ tagline|Ideas claras. Pasos concretos.|Clear ideas. Concrete steps.|Idee chiare.
 breadcrumb|Tu empresa, con una visión más clara.|A clearer view of your business.|Una visione più chiara della tua impresa.
 export|Exportar mi espacio|Export my workspace|Esporta il mio spazio
 exportHelp|Descargar datos, favoritos, notas y progreso|Download records, favorites, notes and progress|Scarica dati, preferiti, note e progressi
+personalSpace|Espacio personal|Personal workspace|Spazio personale
 language|Idioma|Language|Lingua
 daily|TU DOSIS DIARIA DE CLARIDAD|YOUR DAILY DOSE OF CLARITY|LA TUA DOSE QUOTIDIANA DI CHIAREZZA
 practice|Ponerlo en práctica|Put it into practice|Mettilo in pratica
@@ -41,7 +43,7 @@ exploreAll|Explorar todos los consejos|Explore all tips|Esplora tutti i consigli
 closingTitle|Una idea se vuelve valiosa cuando la aplicas.|An idea becomes valuable when you apply it.|Un’idea acquista valore quando la metti in pratica.
 closingIntro|Abre un consejo, escribe tu próximo paso y empieza con algo pequeño.|Open a tip, write your next step and start small.|Apri un consiglio, scrivi il prossimo passo e inizia in piccolo.
 surprise|Sorpréndeme con una idea|Surprise me with an idea|Sorprendimi con un’idea
-localNotice|Datos guardados en este navegador. Exporta una copia para conservarlos.|Data is stored in this browser. Export a copy to keep it.|Dati salvati in questo browser. Esporta una copia per conservarli.
+localNotice|Datos guardados localmente. Exporta una copia para conservarlos.|Data is saved locally. Export a backup to keep it.|Dati salvati localmente. Esporta una copia per conservarli.
 educational|Contenido educativo|Educational content|Contenuto educativo
 closeTip|Cerrar consejo|Close tip|Chiudi consiglio
 nextStep|TU SIGUIENTE PASO|YOUR NEXT STEP|IL TUO PROSSIMO PASSO
@@ -196,7 +198,7 @@ noDueDate|Sin fecha límite|No due date|Senza scadenza
 for(const row of messageRows.trim().split('\n')){const [key,es,en,it]=row.split('|');messages[key]={es,en,it};}
 const spanishTips=tips.map(x=>({...x}));
 const spanishCategories=categories.map(x=>[...x]);
-let language='es';
+let language='en';
 try{const stored=localStorage.getItem('beacon-business-language');if(['es','en','it'].includes(stored))language=stored;}catch{}
 function tr(key){return messages[key]?.[language]||messages[key]?.es||key;}
 function locale(){return {es:'es-US',en:'en-US',it:'it-IT'}[language];}

@@ -1,0 +1,24 @@
+(()=>{
+const rows=`
+aboutBeacon|Acerca de Beacon|About Beacon|Informazioni su Beacon
+coverEyebrow|UNA APLICACIÓN DE BEACON OF THE EAGLE LLC|AN APPLICATION BY BEACON OF THE EAGLE LLC|UN’APPLICAZIONE DI BEACON OF THE EAGLE LLC
+coverHeadline|Claridad para tu negocio. Espacio para crecer.|Business clarity. Room to grow.|Chiarezza per la tua impresa. Spazio per crescere.
+coverBody|Beacon of the Eagle LLC desarrolla herramientas digitales prácticas para organizar el trabajo y convertir ideas en acciones. Bienvenido a tu espacio de gestión empresarial.|Beacon of the Eagle LLC develops practical digital tools to organize work and turn ideas into action. Welcome to your business management workspace.|Beacon of the Eagle LLC sviluppa strumenti digitali pratici per organizzare il lavoro e trasformare le idee in azioni. Benvenuto nel tuo spazio di gestione aziendale.
+enterWorkspace|Entrar al panel|Enter workspace|Accedi allo spazio
+coverCaption|DIRECCIÓN CLARA. DECISIONES CON PROPÓSITO.|CLEAR DIRECTION. PURPOSEFUL DECISIONS.|DIREZIONE CHIARA. DECISIONI CONSAPEVOLI.
+coverNumbers|Conoce tus números|Know your numbers|Conosci i tuoi numeri
+coverNumbersBody|KPI de caja, metas mensuales, presupuestos e informes.|Cash KPIs, monthly targets, budgets and reports.|KPI di cassa, obiettivi mensili, budget e report.
+coverOrganize|Organiza tu operación|Organize your work|Organizza il tuo lavoro
+coverOrganizeBody|Clientes, proyectos y tareas, con un próximo paso claro.|Clients, projects and tasks, with a clear next step.|Clienti, progetti e attività, con un prossimo passo chiaro.
+coverLearn|Convierte ideas en avances|Turn ideas into progress|Trasforma le idee in progressi
+coverLearnBody|100 consejos empresariales con notas y acciones prácticas.|100 business tips with personal notes and practical actions.|100 consigli aziendali con note personali e azioni pratiche.
+coverFooter|Herramientas prácticas. Visión empresarial.|Practical tools. Business perspective.|Strumenti pratici. Prospettiva aziendale.
+beaconLogo|Emblema de Beacon: águila y faro|Beacon eagle and lighthouse emblem|Emblema Beacon con aquila e faro
+`;
+for(const row of rows.trim().split('\n')){const[k,es,en,it]=row.split('|');messages[k]={es,en,it}}
+const cover=document.createElement('dialog');cover.id='beacon-cover';cover.setAttribute('aria-labelledby','cover-title');cover.innerHTML=`<div class="cover-shell"><header class="cover-header"><a class="cover-wordmark" href="#"><span class="cover-brand-mark">B<span>✦</span></span><span>BEACON<small>OF THE EAGLE LLC</small></span></a><label class="cover-language"><span class="sr-only" data-i18n="language"></span><select id="cover-language" data-i18n-label="language"><option value="en">English</option><option value="es">Español</option><option value="it">Italiano</option></select></label></header><div class="cover-hero"><div class="cover-copy"><div class="cover-eyebrow" data-i18n="coverEyebrow"></div><div class="cover-product">BEACON BUSINESS</div><h1 id="cover-title" data-i18n="coverHeadline"></h1><p data-i18n="coverBody"></p><button id="enter-workspace" class="cover-cta"><span data-i18n="enterWorkspace"></span><span aria-hidden="true">＋</span></button></div><div class="cover-visual"><div class="cover-orbit"></div><img src="beacon-emblem.png" alt="Beacon eagle and lighthouse emblem" width="480" height="480"><div class="cover-image-caption" data-i18n="coverCaption"></div></div></div><div class="cover-features">${[['▥','coverNumbers','coverNumbersBody'],['▣','coverOrganize','coverOrganizeBody'],['✦','coverLearn','coverLearnBody']].map(([icon,title,body])=>`<article><span>${icon}</span><div><h2 data-i18n="${title}"></h2><p data-i18n="${body}"></p></div></article>`).join('')}</div><footer class="cover-footer"><span>© ${new Date().getFullYear()} Beacon of the Eagle LLC</span><span data-i18n="coverFooter"></span></footer></div>`;document.body.append(cover);
+$('#enter-workspace').onclick=()=>cover.close();cover.addEventListener('close',()=>document.body.style.overflow='');$('.cover-wordmark').onclick=e=>{e.preventDefault();cover.close()};$('#cover-language').value=language;$('#cover-language').onchange=e=>{$('#language').value=e.target.value;$('#language').dispatchEvent(new Event('change'))};
+function show(){applyLocale();$('#cover-language').value=language;cover.querySelector('img').alt=tr('beaconLogo');cover.showModal();cover.scrollTop=0;document.body.style.overflow='hidden'}
+const about=document.createElement('button');about.className='text-button';about.dataset.i18n='aboutBeacon';about.id='about-beacon';about.onclick=show;$('.top-actions').prepend(about);
+document.addEventListener('beacon-language',()=>{$('#cover-language').value=language;cover.querySelector('img').alt=tr('beaconLogo');applyLocale()});show();
+})();

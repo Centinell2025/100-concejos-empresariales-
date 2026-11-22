@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.beaconoftheeagle.businessmanager'
+    buildFeatures { buildConfig true }
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig {
+        applicationId 'com.beaconoftheeagle.businessmanager'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+        resourceConfigurations += ['en', 'es', 'it']
+    }
+    signingConfigs {
+        release {
+            if (System.getenv('BEACON_UPLOAD_KEYSTORE')) {
+                storeFile file(System.getenv('BEACON_UPLOAD_KEYSTORE'))
+                storePassword System.getenv('BEACON_UPLOAD_STORE_PASSWORD')
+                keyAlias System.getenv('BEACON_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('BEACON_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+        debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDirs = ['src/main/assets', layout.buildDirectory.dir('generated/beaconAssets')]
+}
+tasks.register('syncWebAssets', Copy) {
+    from('../../dist')
+    into(layout.buildDirectory.dir('generated/beaconAssets/www'))
+    exclude 'sw.js', 'manifest.webmanifest'
+}
+tasks.named('preBuild').configure { dependsOn 'syncWebAssets' }
+dependencies { implementation 'androidx.webkit:webkit:1.14.0' }

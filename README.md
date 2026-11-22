@@ -1,28 +1,36 @@
-# Beacon Business · Gestión empresarial
+# Beacon Business
 
-Aplicación web de Beacon of the Eagle LLC con interfaz y 100 consejos completos en español, inglés e italiano. Selector de idioma con preferencia persistente.
+Offline business management by Beacon of the Eagle LLC, with a blue interface and 100 educational business tips. **English is the first-launch language**; Spanish and Italian remain selectable. Existing saved language preferences are preserved.
 
-## Módulos
+## Features
 
-- Panel KPI por mes: ingresos cobrados, gastos pagados, resultado neto de caja y margen de caja.
-- Tendencia de seis meses con tabla de importes; no se generan datos de demostración.
-- Movimientos: alta, edición, eliminación con deshacer, filtro mensual, búsqueda y clasificación por tipo.
-- Clientes: contactos, estado y valor estimado de oportunidades. Las oportunidades no cuentan como ingresos.
-- Proyectos: estado, cliente, presupuesto previsto, fecha límite y avance de tareas vinculadas. Los presupuestos no cuentan como gastos.
-- Tareas: prioridad, estado, proyecto, vencimiento y finalización.
-- Biblioteca: 100 consejos por idioma, categorías, buscador, favoritos, notas y acciones completadas.
-- Exportación JSON de todos los registros y del espacio de aprendizaje.
+- Monthly cash KPIs: income received, expenses paid, net cash result and cash margin.
+- Six-month trend with a table of the underlying amounts.
+- Manual transactions with monthly filtering, search, editing and deletion with Undo.
+- Client contacts, status and estimated lead opportunities.
+- Projects with client assignment, planned budgets, deadlines and linked task progress.
+- Tasks with priorities, status, deadlines and completion.
+- 100 complete tips in each language, with search, categories, favorites, notes and practical actions.
+- JSON export and validated restoration with a preview and Undo.
+- Monthly income targets, expense budgets and CSV reports.
+- A branded Beacon welcome page with the eagle and lighthouse emblem.
 
-## Cálculos
+Amounts use USD and are stored as integer cents. Monthly result is income received minus expenses paid; margin is result divided by income times 100. With no income, margin displays a dash. Opportunities and project budgets are planning values and are not counted as collected income or paid expenses.
 
-Todos los importes se registran en USD y se guardan como centavos enteros. Los KPI mensuales incluyen exclusivamente movimientos con fecha en el mes seleccionado. Resultado = ingresos cobrados − gastos pagados. Margen = resultado / ingresos × 100; sin ingresos se muestra «—». Es un registro manual de caja, no contabilidad por devengo, facturación fiscal ni conciliación bancaria. Los indicadores operativos usan todos los registros.
+## Web app
 
-## Datos y funcionamiento
+Serve `dist/` through a static HTTP server. No dependency installation or compilation is required. Browser records are stored in localStorage. The hosted app has owner-private access through ChatGPT. No bank connection or account synchronization is included. Validated JSON backup restoration and monthly CSV reports are included. Export before clearing browser data.
 
-Los registros, las notas y la preferencia de idioma se guardan en localStorage del navegador. No hay cuentas internas, sincronización entre dispositivos ni conexión bancaria. La privacidad del alojamiento se gestiona mediante ChatGPT. Exporta una copia antes de borrar datos del navegador. Esta versión exporta JSON pero no lo importa. Las notas personales no se traducen automáticamente al cambiar idioma.
+## Android app
 
-Sirve `dist/` mediante HTTP; no requiere instalación de dependencias ni compilación. Usa HTTPS para el service worker fuera de localhost. El manifest y el service worker permiten uso sin conexión después de una primera carga completa compatible; la instalación depende del navegador.
+Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.0; minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
 
-## Verificación
+## Google Play preparation
 
-Comprobación de sintaxis JavaScript y de 100 consejos completos por idioma. Revisión en navegador de cambio de idioma, persistencia, clientes, proyectos vinculados, tareas y cálculos con ingreso de 1.000 USD y gasto de 250 USD: resultado 750 USD y margen 75 %. Los registros de prueba se eliminan del espacio de revisión.
+The requested country list is **United States, Spain and Canada only**. This list must be applied in Play Console; it is not enforced by the AAB. See `play-store/` for English listing text, release settings, assets and publication steps. Preparing or compiling an app does not publish it or grant legal/export authorization.
+
+Android privacy policy: [PRIVACY.md](PRIVACY.md). Intellectual-property and country requirements: [release review](play-store/DISTRIBUTION-AND-IP-REVIEW.md). Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Validation
+
+Web JavaScript syntax and complete translations were checked. Browser checks covered cash calculations (1,000 income and 250 expense produce 750 net and 75% margin), language switching, persistence, linked clients/projects/tasks, completion and Undo. Test records were removed. Android build and signature validation are recorded with the release outputs; on-device testing and Play review remain separate steps.
