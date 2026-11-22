@@ -1,4 +1,4 @@
-const categories = [
+let categories = [
 ['Estrategia','◎','Define tu dirección'],['Clientes','♧','Escucha antes de crear'],['Ventas','↗','Convierte valor en acuerdos'],['Finanzas','▥','Conoce tus números'],['Marketing','◈','Haz visible tu propuesta'],['Operaciones','⚙','Trabaja con orden'],['Liderazgo','◇','Construye un buen equipo'],['Innovación','✧','Prueba, aprende y mejora'],['Tecnología','⌘','Protege y simplifica'],['Crecimiento','▰','Avanza con intención']
 ];
 const raw = [
@@ -114,4 +114,4 @@ const raw = [
 ['Revisa el camino y el siguiente paso','Un negocio se construye con decisiones revisadas, no con un plan inmutable. Reconoce avances y elige una acción que puedas completar.','Escribe un aprendizaje del mes y tu próximo paso concreto.']
 ]
 ];
-const tips=raw.flatMap((items,c)=>items.map(([title,body,action],i)=>({id:c*10+i+1,category:c,title,body,action})));
+let tips=raw.flatMap((items,c)=>items.map(([title,body,action],i)=>({id:c*10+i+1,category:c,title,body,action})));

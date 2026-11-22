@@ -1,20 +1,28 @@
-# 100 Consejos Empresariales · Beacon
+# Beacon Business · Gestión empresarial
 
-Aplicación web en español de Beacon of the Eagle LLC. Contiene 100 consejos originales en 10 categorías: Estrategia, Clientes, Ventas, Finanzas, Marketing, Operaciones, Liderazgo, Innovación, Tecnología y Crecimiento.
+Aplicación web de Beacon of the Eagle LLC con interfaz y 100 consejos completos en español, inglés e italiano. Selector de idioma con preferencia persistente.
 
-## Funciones
+## Módulos
 
-- Consejo diario, búsqueda sin distinción de acentos, filtro por categoría y ordenación.
-- Detalle con una acción práctica por consejo.
-- Favoritos, notas con guardado automático y acciones completadas.
-- Exportación del espacio personal como JSON.
-- Interfaz adaptable a móviles y escritorio, navegación con teclado.
-- Manifest y service worker para uso sin conexión después de una primera carga completa compatible. La instalación depende del navegador.
+- Panel KPI por mes: ingresos cobrados, gastos pagados, resultado neto de caja y margen de caja.
+- Tendencia de seis meses con tabla de importes; no se generan datos de demostración.
+- Movimientos: alta, edición, eliminación con deshacer, filtro mensual, búsqueda y clasificación por tipo.
+- Clientes: contactos, estado y valor estimado de oportunidades. Las oportunidades no cuentan como ingresos.
+- Proyectos: estado, cliente, presupuesto previsto, fecha límite y avance de tareas vinculadas. Los presupuestos no cuentan como gastos.
+- Tareas: prioridad, estado, proyecto, vencimiento y finalización.
+- Biblioteca: 100 consejos por idioma, categorías, buscador, favoritos, notas y acciones completadas.
+- Exportación JSON de todos los registros y del espacio de aprendizaje.
 
-## Ejecutar
+## Cálculos
 
-Sirve `dist/` desde un servidor HTTP estático. No requiere dependencias ni compilación. Usa HTTPS para el service worker fuera de localhost.
+Todos los importes se registran en USD y se guardan como centavos enteros. Los KPI mensuales incluyen exclusivamente movimientos con fecha en el mes seleccionado. Resultado = ingresos cobrados − gastos pagados. Margen = resultado / ingresos × 100; sin ingresos se muestra «—». Es un registro manual de caja, no contabilidad por devengo, facturación fiscal ni conciliación bancaria. Los indicadores operativos usan todos los registros.
 
-Los favoritos, notas y el progreso se guardan en localStorage del navegador. No existe sincronización entre dispositivos ni cuentas. Exporta tus datos antes de borrar los datos del navegador. El JSON exportado es una copia legible; esta versión no tiene importación.
+## Datos y funcionamiento
 
-El contenido es educativo y general. No incluye asesoramiento personalizado ni garantías de resultados. No se recopilan datos mediante servicios de analítica ni se realizan solicitudes a servicios externos desde la aplicación.
+Los registros, las notas y la preferencia de idioma se guardan en localStorage del navegador. No hay cuentas internas, sincronización entre dispositivos ni conexión bancaria. La privacidad del alojamiento se gestiona mediante ChatGPT. Exporta una copia antes de borrar datos del navegador. Esta versión exporta JSON pero no lo importa. Las notas personales no se traducen automáticamente al cambiar idioma.
+
+Sirve `dist/` mediante HTTP; no requiere instalación de dependencias ni compilación. Usa HTTPS para el service worker fuera de localhost. El manifest y el service worker permiten uso sin conexión después de una primera carga completa compatible; la instalación depende del navegador.
+
+## Verificación
+
+Comprobación de sintaxis JavaScript y de 100 consejos completos por idioma. Revisión en navegador de cambio de idioma, persistencia, clientes, proyectos vinculados, tareas y cálculos con ingreso de 1.000 USD y gasto de 250 USD: resultado 750 USD y margen 75 %. Los registros de prueba se eliminan del espacio de revisión.
