@@ -1,1 +1,31 @@
-{"appName":"Beacon Business","applicationId":"com.beaconoftheeagle.businessmanager","versionName":"1.0.0","versionCode":1,"defaultLanguage":"en-US","supportedLanguages":["en-US","es-ES","it-IT"],"distributionCountries":["US","ES","CA"],"countrySelectionStatus":"Requested settings; must be selected in Google Play Console","category":"BUSINESS","containsAds":false,"inAppPurchases":false,"loginRequired":false,"currency":"USD","pricingDecision":"Not configured","targetSdk":36,"minSdk":26}
+{
+  "appName": "Beacon Business",
+  "applicationId": "com.beaconoftheeagle.businessmanager",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "defaultLanguage": "en-US",
+  "supportedLanguages": [
+    "en-US",
+    "es-ES",
+    "it-IT"
+  ],
+  "distributionCountries": [
+    "US",
+    "ES",
+    "CA"
+  ],
+  "countrySelectionStatus": "Requested settings; must be selected in Google Play Console",
+  "category": "BUSINESS",
+  "containsAds": false,
+  "inAppPurchases": false,
+  "loginRequired": false,
+  "currency": "USD",
+  "pricingDecision": "Paid — user selected USD 9.99 one-time",
+  "targetSdk": 36,
+  "minSdk": 26,
+  "basePrice": {
+    "currency": "USD",
+    "amount": "9.99"
+  },
+  "priceConfigurationStatus": "Selected by owner; not yet configured in Google Play Console"
+}

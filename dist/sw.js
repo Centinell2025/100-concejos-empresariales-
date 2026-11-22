@@ -1,4 +1,4 @@
-const CACHE='beacon-business-v6';
+const CACHE='beacon-business-v7';
 const ASSETS=['./','./index.html','./privacy.html','./style.css','./tips.js','./app.js','./business.js','./backup.js','./enhancements.js','./welcome.js','./introduction.js','./beacon-emblem.png','./i18n.js','./tips-en.js','./tips-it.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
