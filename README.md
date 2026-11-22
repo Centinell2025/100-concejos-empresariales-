@@ -14,6 +14,7 @@ Offline business management by Beacon of the Eagle LLC, with a blue interface an
 - JSON export and validated restoration with a preview and Undo.
 - Monthly income targets, expense budgets and CSV reports.
 - A branded Beacon welcome page with the eagle and lighthouse emblem.
+- An Introduction / How it works guide explaining manual entry, monthly cash KPIs, client/project/task workflows, USD amounts, reports, backups and restoration.
 
 Amounts use USD and are stored as integer cents. Monthly result is income received minus expenses paid; margin is result divided by income times 100. With no income, margin displays a dash. Opportunities and project budgets are planning values and are not counted as collected income or paid expenses.
 
