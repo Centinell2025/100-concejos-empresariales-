@@ -24,7 +24,7 @@ Serve `dist/` through a static HTTP server. No dependency installation or compil
 
 ## Android app
 
-Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.0; minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
+Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.1; minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
 
 ## Google Play preparation
 
@@ -35,3 +35,14 @@ Android privacy policy: [PRIVACY.md](PRIVACY.md). Intellectual-property and coun
 ## Validation
 
 Web JavaScript syntax and complete translations were checked. Browser checks covered cash calculations (1,000 income and 250 expense produce 750 net and 75% margin), language switching, persistence, linked clients/projects/tasks, completion and Undo. Test records were removed. Android build and signature validation are recorded with the release outputs; on-device testing and Play review remain separate steps.
+
+## Update 1.0.1 (version code 2)
+
+- Monthly priorities calculated from the local ledger and goals, plus overdue tasks and active projects, in English, Spanish and Italian.
+- Failed transaction, task, deletion and goal writes preserve the current in-memory records; forms remain available to retry.
+- Backup validation accepts a UTF-8 BOM and rejects invalid amount types and malformed goals.
+- Larger touch targets, wrapping for large amounts and reduced-motion support.
+
+Run `node --test tests/release-core.test.cjs` and `node tests/release-browser.cjs` (Playwright and Chromium required; optionally set CHROMIUM_BIN). Native Android runtime and document pickers still require device testing.
+
+The prepared 1.0.1 AAB reuses the signed 1.0.0 release's compiled native DEX/resources, updates web assets and manifest through official bundletool, and is signed with the same private upload key. The native Java code is unchanged. The Gradle source configuration also specifies version 1.0.1 / code 2 for future full builds. No Google Play submission was performed for this update.
