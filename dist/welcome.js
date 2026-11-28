@@ -20,7 +20,7 @@
   cover.innerHTML = `
     <div class="cover-shell">
       <header class="cover-header">
-        <span class="cover-wordmark">Beacon of the Eagle LLC</span>
+        <span class="cover-wordmark" data-i18n="appPublisher"></span>
         <label class="cover-language">
           <span class="sr-only" data-i18n="language"></span>
           <select id="cover-language" data-i18n-label="language">
@@ -43,6 +43,7 @@
           <img src="beacon-emblem.png" alt="" width="480" height="480">
         </div>
       </div>
+      <footer class="cover-footer" data-i18n="appCopyright"></footer>
     </div>`;
   document.body.append(cover);
 

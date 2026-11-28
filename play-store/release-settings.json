@@ -1,8 +1,8 @@
 {
   "appName": "Beacon Business",
   "applicationId": "com.beaconoftheeagle.businessmanager",
-  "versionName": "1.0.3",
-  "versionCode": 4,
+  "versionName": "1.0.4",
+  "versionCode": 5,
   "defaultLanguage": "en-US",
   "supportedLanguages": [
     "en-US",
@@ -53,7 +53,7 @@
   "storeListingLanguage": "en-US",
   "storeListingScreenshots": 5,
   "aiAssetLabels": "Applied to app icon, feature graphic and all five interface captures",
-  "androidDeviceTesting": "Version 1.0.3 verified with Chromium and Android document flow simulation on API 26 and 35. Physical-device tests pending.",
+  "androidDeviceTesting": "The Android document flow was simulated on API 26 and 35 in version 1.0.3. Physical-device testing for version 1.0.4 is pending.",
   "advertisingId": false,
-  "setupStatus": "Version 1.0.3 prepared as an update to the existing app. No new Play submission has been made."
+  "setupStatus": "Version 1.0.4 prepared as an update to the existing app. No new Play submission has been made."
 }

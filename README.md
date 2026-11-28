@@ -24,7 +24,7 @@ Serve `dist/` through a static HTTP server. No dependency installation or compil
 
 ## Android app
 
-Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.3 (version code 4); minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
+Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.4 (version code 5); minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
 
 ## Google Play preparation
 
@@ -35,6 +35,10 @@ Android privacy policy: [PRIVACY.md](PRIVACY.md). Intellectual-property and coun
 ## Validation
 
 Web JavaScript syntax and complete translations were checked. Browser checks covered cash calculations (1,000 income and 250 expense produce 750 net and 75% margin), language switching, persistence, linked clients/projects/tasks, completion and Undo. Test records were removed. Android build and signature validation are recorded with the release outputs; on-device testing and Play review remain separate steps.
+
+## Android 1.0.4 (version code 5)
+
+The welcome screen and dashboard identify Beacon of the Eagle LLC as the company behind Beacon Business. The library and individual reading pages credit the original content of the 100 Business Tips collection. Notices are localized in English, Spanish and Italian. See [the release notes](play-store/RELEASE-1.0.4.md).
 
 ## Android 1.0.3 (version code 4)
 

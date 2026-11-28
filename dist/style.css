@@ -44,3 +44,11 @@
   .cover-copy > p { margin-bottom: 18px; }
   .cover-actions .cover-cta { width: auto; }
 }
+
+.cover-header .cover-wordmark { max-width: 36rem; line-height: 1.45; }
+.cover-shell .cover-footer { color: #d1e1f7; font-size: .875rem; line-height: 1.5; border-color: #b6d8ff40; }
+.workspace-footer { flex-wrap: wrap; color: #4c6484; font-size: .875rem; padding-top: 1rem; border-top: 1px solid #ccd9e9; }
+.workspace-footer > div { display: grid; gap: .15rem; }
+.collection-credit { color: #4c6484; font-size: .875rem; line-height: 1.5; }
+.library > .collection-credit { margin: -.25rem 0 1rem; }
+#detail > .collection-credit { margin: .5rem 0 1.25rem; }

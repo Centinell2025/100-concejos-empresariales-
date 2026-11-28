@@ -1,5 +1,8 @@
 const messages = {};
 const messageRows = `
+appPublisher|Beacon Business es una aplicación de Beacon of the Eagle LLC.|Beacon Business is an app by Beacon of the Eagle LLC.|Beacon Business è un’app di Beacon of the Eagle LLC.
+appCopyright|© 2026 Beacon of the Eagle LLC. Todos los derechos reservados.|© 2026 Beacon of the Eagle LLC. All rights reserved.|© 2026 Beacon of the Eagle LLC. Tutti i diritti riservati.
+tipsCopyright|Selección y textos originales de «100 consejos empresariales» © 2026 Beacon of the Eagle LLC.|Selection and original text of “100 Business Tips” © 2026 Beacon of the Eagle LLC.|Selezione e testi originali di «100 consigli aziendali» © 2026 Beacon of the Eagle LLC.
 removeClientLinks|Si eliminas este cliente, sus proyectos quedarán sin cliente asignado. Proyectos afectados: {count}.|Deleting this client will leave its projects without an assigned client. Affected projects: {count}.|Eliminando questo cliente, i suoi progetti resteranno senza un cliente assegnato. Progetti interessati: {count}.
 removeProjectLinks|Si eliminas este proyecto, sus tareas quedarán sin proyecto asignado. Tareas afectadas: {count}.|Deleting this project will leave its tasks without an assigned project. Affected tasks: {count}.|Eliminando questo progetto, le sue attività resteranno senza un progetto assegnato. Attività interessate: {count}.
 savedPeriod|Guardado en {period}.|Saved in {period}.|Salvato nel periodo {period}.
