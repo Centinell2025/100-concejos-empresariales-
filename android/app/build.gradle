@@ -8,8 +8,8 @@ android {
         applicationId 'com.beaconoftheeagle.businessmanager'
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName '1.0.0'
+        versionCode 5
+        versionName '1.0.4'
         resourceConfigurations += ['en', 'es', 'it']
     }
     signingConfigs {
@@ -23,13 +23,16 @@ android {
         }
     }
     buildTypes {
-        release { minifyEnabled false; signingConfig signingConfigs.release }
+        release {
+            minifyEnabled false
+            if (System.getenv('BEACON_UPLOAD_KEYSTORE')) signingConfig signingConfigs.release
+        }
         debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     sourceSets.main.assets.srcDirs = ['src/main/assets', layout.buildDirectory.dir('generated/beaconAssets')]
 }
-tasks.register('syncWebAssets', Copy) {
+tasks.register('syncWebAssets', Sync) {
     from('../../dist')
     into(layout.buildDirectory.dir('generated/beaconAssets/www'))
     exclude 'sw.js', 'manifest.webmanifest'

@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     private static final String START = "https://" + HOST + "/assets/www/index.html";
     private static final int EXPORT_REQUEST = 100;
+    private static final int MAX_BACKUP_BYTES = 10_000_000;
     private WebView web;
     private String pendingBackup;
 
@@ -78,8 +79,17 @@ public class MainActivity extends Activity {
     }
     private class ExportBridge {
         @JavascriptInterface public void exportBackup(String json) {
-            if (json == null || json.length() > 10_000_000) return;
-            try { new JSONObject(json); } catch (Exception e) { return; }
+            if (json == null || json.length() > MAX_BACKUP_BYTES
+                    || json.getBytes(StandardCharsets.UTF_8).length > MAX_BACKUP_BYTES) {
+                runOnUiThread(() -> notifyExport("error"));
+                return;
+            }
+            try {
+                new JSONObject(json);
+            } catch (Exception e) {
+                runOnUiThread(() -> notifyExport("error"));
+                return;
+            }
             beginExport(json,"application/json","beacon-business-backup.json");
         }
         @JavascriptInterface public void exportReport(String csv) {
@@ -116,7 +126,7 @@ public class MainActivity extends Activity {
             try(java.io.InputStream in=getContentResolver().openInputStream(uri);java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()) {
                 if(in==null)throw new java.io.IOException("No input stream");
                 byte[] buffer=new byte[8192];int size;
-                while((size=in.read(buffer))!=-1){if(out.size()+size>10_000_000)throw new java.io.IOException("File too large");out.write(buffer,0,size);}
+                while((size=in.read(buffer))!=-1){if(out.size()+size>MAX_BACKUP_BYTES)throw new java.io.IOException("File too large");out.write(buffer,0,size);}
                 String text=new String(out.toByteArray(),StandardCharsets.UTF_8);
                 new JSONObject(text);
                 runOnUiThread(() -> {if(!isFinishing())web.evaluateJavascript("document.dispatchEvent(new CustomEvent('beacon-import-file',{detail:"+JSONObject.quote(text)+"}));",null);});
@@ -144,8 +154,17 @@ public class MainActivity extends Activity {
         web.evaluateJavascript("document.dispatchEvent(new CustomEvent('beacon-export-result',{detail:'"+status+"'}));",null);
     }
     private void handleBack() {
-        web.evaluateJavascript("(function(){var d=document.querySelector('dialog[open]');if(d){d.close();return true;}return false;})()",result -> {
-            if (!"true".equals(result)) { if(web.canGoBack()) web.goBack(); else finish(); }
+        String handlePageBack = "(function(){"
+            + "var dialog=document.querySelector('dialog[open]');"
+            + "if(dialog){dialog.close();return true;}"
+            + "var menu=document.querySelector('.workspace-tools[open]');"
+            + "if(menu){menu.open=false;return true;}"
+            + "return window.BeaconBusiness ? window.BeaconBusiness.goBack() : false;"
+            + "})()";
+        web.evaluateJavascript(handlePageBack, handled -> {
+            if ("true".equals(handled)) return;
+            if (web.canGoBack()) web.goBack();
+            else finish();
         });
     }
     @Override public void onBackPressed() { handleBack(); }

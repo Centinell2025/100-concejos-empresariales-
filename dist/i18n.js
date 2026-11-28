@@ -1,5 +1,12 @@
 const messages = {};
 const messageRows = `
+appPublisher|Beacon Business es una aplicación de Beacon of the Eagle LLC.|Beacon Business is an app by Beacon of the Eagle LLC.|Beacon Business è un’app di Beacon of the Eagle LLC.
+appCopyright|© 2026 Beacon of the Eagle LLC. Todos los derechos reservados.|© 2026 Beacon of the Eagle LLC. All rights reserved.|© 2026 Beacon of the Eagle LLC. Tutti i diritti riservati.
+tipsCopyright|Selección y textos originales de «100 consejos empresariales» © 2026 Beacon of the Eagle LLC.|Selection and original text of “100 Business Tips” © 2026 Beacon of the Eagle LLC.|Selezione e testi originali di «100 consigli aziendali» © 2026 Beacon of the Eagle LLC.
+removeClientLinks|Si eliminas este cliente, sus proyectos quedarán sin cliente asignado. Proyectos afectados: {count}.|Deleting this client will leave its projects without an assigned client. Affected projects: {count}.|Eliminando questo cliente, i suoi progetti resteranno senza un cliente assegnato. Progetti interessati: {count}.
+removeProjectLinks|Si eliminas este proyecto, sus tareas quedarán sin proyecto asignado. Tareas afectadas: {count}.|Deleting this project will leave its tasks without an assigned project. Affected tasks: {count}.|Eliminando questo progetto, le sue attività resteranno senza un progetto assegnato. Attività interessate: {count}.
+savedPeriod|Guardado en {period}.|Saved in {period}.|Salvato nel periodo {period}.
+viewSavedMonth|Ver ese mes|View that month|Vedi quel mese
 privacy|Política de privacidad|Privacy policy|Informativa sulla privacy
 appTitle|Beacon · Gestión empresarial|Beacon · Business management|Beacon · Gestione aziendale
 learn|APRENDE · APLICA · CRECE|LEARN · APPLY · GROW|IMPARA · APPLICA · CRESCI
@@ -67,6 +74,8 @@ withNotes|Con notas|With notes|Con note
 readTime|2 min de claridad|2 min of clarity|2 minuti di chiarezza
 saveError|No se pueden guardar los cambios. Exporta tu espacio para conservarlo.|Changes cannot be saved. Export your workspace to keep them.|Impossibile salvare le modifiche. Esporta lo spazio per conservarle.
 exported|Tu espacio se ha exportado.|Your workspace has been exported.|Il tuo spazio è stato esportato.
+backupTooLarge|La copia supera el límite de 10 MB por archivo.|The backup exceeds the 10 MB file limit.|La copia supera il limite di 10 MB per file.
+backupExportFailed|No se pudo crear una copia compatible con la restauración.|A restorable backup could not be created.|Impossibile creare una copia ripristinabile.
 cat0|Estrategia|Strategy|Strategia
 cat1|Clientes|Customers|Clienti
 cat2|Ventas|Sales|Vendite
@@ -193,6 +202,16 @@ referenceOnly|Referencia de planificación; no se suma a los gastos.|Planning re
 dueToday|Hoy|Today|Oggi
 overdue|Vencida|Overdue|Scaduta
 monthlySummary|Resumen mensual|Monthly summary|Riepilogo mensile
+workspaceRecover|Hay una restauración pendiente. Vuelve a abrir la aplicación para recuperarla antes de guardar.|A restore is pending. Reopen the app to recover it before saving.|Un ripristino è in sospeso. Riapri l'app per completarlo prima di salvare.
+savingNote|Guardando…|Saving…|Salvataggio…
+noteConflict|La nota cambió en otra ventana. Copia tu borrador y vuelve a abrir la nota para revisar la versión guardada.|This note changed in another window. Copy your draft and reopen the note to review the saved version.|La nota è cambiata in un’altra finestra. Copia la bozza e riapri la nota per verificare la versione salvata.
+noteWriteFailed|No se guardó el cambio. Copia el texto pendiente y vuelve a intentarlo.|The change was not saved. Copy any unsaved text and try again.|Il cambiamento non è stato salvato. Copia il testo in sospeso e riprova.
+recordChanged|El registro cambió en otra ventana. Vuelve a abrirlo para revisar los datos actuales antes de guardar.|This record changed in another window. Reopen it to review the latest data before saving.|Il record è cambiato in un’altra finestra. Riaprilo e controlla i dati aggiornati prima di salvare.
+relationChanged|El cliente o proyecto elegido ya no existe. Vuelve a elegir una relación disponible.|The selected client or project is no longer available. Choose an existing one.|Il cliente o il progetto selezionato non è più disponibile. Scegline uno esistente.
+collectionFull|Este apartado admite 10.000 registros. Has alcanzado el límite.|This section holds up to 10,000 records. You have reached the limit.|Questa sezione può contenere fino a 10.000 record. Hai raggiunto il limite.
+goalsFull|Se alcanzó el límite de 1.200 meses con metas.|The limit of 1,200 months with goals has been reached.|È stato raggiunto il limite di 1.200 mesi con obiettivi.
+requiredName|Escribe un nombre o una descripción que contenga texto.|Enter a name or description containing text.|Inserisci un nome o una descrizione che contenga testo.
+dateOutsideRange|Usa una fecha válida entre 1900 y 9999.|Enter a valid date between 1900 and 9999.|Inserisci una data valida tra il 1900 e il 9999.
 noDueDate|Sin fecha límite|No due date|Senza scadenza
 `;
 for(const row of messageRows.trim().split('\n')){const [key,es,en,it]=row.split('|');messages[key]={es,en,it};}
@@ -201,7 +220,7 @@ const spanishCategories=categories.map(x=>[...x]);
 let language='en';
 try{const stored=localStorage.getItem('beacon-business-language');if(['es','en','it'].includes(stored))language=stored;}catch{}
 function tr(key){return messages[key]?.[language]||messages[key]?.es||key;}
-function locale(){return {es:'es-US',en:'en-US',it:'it-IT'}[language];}
+function locale(){return {es:'es-ES',en:'en-US',it:'it-IT'}[language];}
 function applyLocale(){
  const translated=language==='en'?tipsEN:language==='it'?tipsIT:null;
  tips=spanishTips.map((tip,i)=>translated?{...tip,title:translated[i][0],body:translated[i][1],action:translated[i][2]}:{...tip});

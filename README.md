@@ -24,7 +24,7 @@ Serve `dist/` through a static HTTP server. No dependency installation or compil
 
 ## Android app
 
-Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.0; minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
+Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.4 (version code 5); minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
 
 ## Google Play preparation
 
@@ -35,3 +35,36 @@ Android privacy policy: [PRIVACY.md](PRIVACY.md). Intellectual-property and coun
 ## Validation
 
 Web JavaScript syntax and complete translations were checked. Browser checks covered cash calculations (1,000 income and 250 expense produce 750 net and 75% margin), language switching, persistence, linked clients/projects/tasks, completion and Undo. Test records were removed. Android build and signature validation are recorded with the release outputs; on-device testing and Play review remain separate steps.
+
+## Android 1.0.4 (version code 5)
+
+The welcome screen and dashboard identify Beacon of the Eagle LLC as the company behind Beacon Business. The library and individual reading pages credit the original content of the 100 Business Tips collection. Notices are localized in English, Spanish and Italian. See [the release notes](play-store/RELEASE-1.0.4.md).
+
+## Android 1.0.3 (version code 4)
+
+Money fields accept either a decimal point or a comma and store exact USD cents. The amount preview and validation are available in English, Spanish and Italian. When two windows edit the same record, the second editor keeps the unsaved draft and can see that the record changed.
+
+Restore previews include goals, favorites, completed tips and notes. If data has changed since a restore, Undo offers a chance to keep working, export the current workspace, or explicitly replace it. Recovery information is saved before updates to the workspace are applied. Existing valid dates before 1900 remain readable through backups.
+
+The ledger identifies the month of a saved entry outside the selected period. Client and project searches include linked records. The app asks before unlinking related records on deletion. Tip search includes personal notes, and the privacy page opens in the selected language.
+
+See [the release notes and verification results](play-store/RELEASE-1.0.3.md). Run the browser and core checks with `node --test --test-concurrency=2 tests/*.cjs` and set `CHROMIUM_BIN` to a Chromium executable.
+
+## Android 1.0.2 (version code 3)
+
+The dashboard opens directly on return visits. Record income or expenses from the monthly summary and check the selected period against its goals. The first-launch welcome and dashboard support English, Spanish and Italian. Previous/next stays inside the selected list when reading business tips from favorites, search or a category.
+
+JSON restore accepts long notes created in earlier versions, including their original line breaks and whitespace. The exporter validates the backup and its 10,000,000-byte limit before starting an Android or browser download.
+
+The debug APK installs alongside the Google Play app with a separate data store. See [the Android project](android/README.md) for build and signing details. Tests cover the dashboard actions, offline reload, rejected writes, filtered reading lists and long-note backup restoration. Run the browser tests with the Chromium executable in `CHROMIUM_BIN`.
+
+## Previous update 1.0.1 (version code 2)
+
+- Monthly priorities calculated from the local ledger and goals, plus overdue tasks and active projects, in English, Spanish and Italian.
+- Failed transaction, task, deletion and goal writes preserve the current in-memory records; forms remain available to retry.
+- Backup validation accepts a UTF-8 BOM and rejects invalid amount types and malformed goals.
+- Larger touch targets, wrapping for large amounts and reduced-motion support.
+
+Run `node --test tests/release-core.test.cjs` and `node tests/release-browser.cjs` (Playwright and Chromium required; optionally set CHROMIUM_BIN). Native Android runtime and document pickers still require device testing.
+
+The prepared 1.0.1 AAB reuses the signed 1.0.0 release's compiled native DEX/resources, updates web assets and manifest through official bundletool, and is signed with the same private upload key. The native Java code is unchanged. The Gradle source configuration also specifies version 1.0.1 / code 2 for future full builds. No Google Play submission was performed for this update.
