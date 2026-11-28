@@ -1,6 +1,7 @@
 /* Strict, side-effect-free validation for user-selected backups. */
+const BEACON_BACKUP_MAX_BYTES = 10_000_000;
 function validateBeaconBackup(text){
- if(typeof text!=='string'||text.length>10000000)throw Error('size');
+ if(typeof text!=='string'||text.length>BEACON_BACKUP_MAX_BYTES)throw Error('size');
  let source;try{source=JSON.parse(text.replace(/^\uFEFF/,''))}catch{throw Error('json')}
  if(!source||Array.isArray(source)||source.app!=='Beacon Business'||source.version!==2||!source.business||Array.isArray(source.business)||typeof source.business!=='object')throw Error('format');
  const str=(v,max=300)=>{if(v===undefined||v===null)return '';if(typeof v!=='string'||v.length>max)throw Error('text');return v.trim()};
@@ -21,7 +22,14 @@ function validateBeaconBackup(text){
  }
  if(source.business.goals!==undefined){const goals=source.business.goals;if(!goals||Array.isArray(goals)||typeof goals!=='object'||Object.keys(goals).length>1200)throw Error('goals');for(const [key,v]of Object.entries(goals)){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(key)||!v||typeof v!=='object'||Array.isArray(v))throw Error('goals');db.goals[key]={income:amount(v.income??0),expenses:amount(v.expenses??0)}}}
  const learning=source.learning||{favorites:[],completed:[],notes:{}};const ids=a=>{if(!Array.isArray(a)||a.length>100||a.some(x=>!Number.isInteger(x)||x<1||x>100))throw Error('learning');return [...new Set(a)]};
- const notes=Object.create(null);if(!learning.notes||typeof learning.notes!=='object'||Array.isArray(learning.notes))throw Error('notes');for(const [key,v]of Object.entries(learning.notes)){if(!/^(?:[1-9][0-9]?|100)$/.test(key))throw Error('notes');notes[key]=str(v,10000)}
+ const notes=Object.create(null);
+ if(!learning.notes||typeof learning.notes!=='object'||Array.isArray(learning.notes))throw Error('notes');
+ for(const [key,value] of Object.entries(learning.notes)){
+   if(!/^(?:[1-9][0-9]?|100)$/.test(key))throw Error('notes');
+   if(value!==null&&typeof value!=='string')throw Error('notes');
+   // The note editor accepts free-form text. The whole backup already has a size limit.
+   notes[key]=value??'';
+ }
  return {business:db,learning:{favorites:ids(learning.favorites),done:ids(learning.completed),notes}};
 }
 function beaconCsvCell(value){let s=String(value??'');if(/^(?:[\s\uFEFF]*[=+\-@]|[\t\r\n])/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}

@@ -24,7 +24,7 @@ Serve `dist/` through a static HTTP server. No dependency installation or compil
 
 ## Android app
 
-Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.1; minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
+Open `android/` in Android Studio. The app bundles the web assets and runs offline without ChatGPT sign-in. Package: `com.beaconoftheeagle.businessmanager`; version 1.0.2 (version code 3); minimum API 26; target API 36. See `android/README.md` for build and signing instructions. Private signing material is deliberately excluded from this repository.
 
 ## Google Play preparation
 
@@ -36,7 +36,15 @@ Android privacy policy: [PRIVACY.md](PRIVACY.md). Intellectual-property and coun
 
 Web JavaScript syntax and complete translations were checked. Browser checks covered cash calculations (1,000 income and 250 expense produce 750 net and 75% margin), language switching, persistence, linked clients/projects/tasks, completion and Undo. Test records were removed. Android build and signature validation are recorded with the release outputs; on-device testing and Play review remain separate steps.
 
-## Update 1.0.1 (version code 2)
+## Android 1.0.2 (version code 3)
+
+The dashboard opens directly on return visits. Record income or expenses from the monthly summary and check the selected period against its goals. The first-launch welcome and dashboard support English, Spanish and Italian. Previous/next stays inside the selected list when reading business tips from favorites, search or a category.
+
+JSON restore accepts long notes created in earlier versions, including their original line breaks and whitespace. The exporter validates the backup and its 10,000,000-byte limit before starting an Android or browser download.
+
+The debug APK installs alongside the Google Play app with a separate data store. See [the Android project](android/README.md) for build and signing details. Tests cover the dashboard actions, offline reload, rejected writes, filtered reading lists and long-note backup restoration. Run the browser tests with the Chromium executable in `CHROMIUM_BIN`.
+
+## Previous update 1.0.1 (version code 2)
 
 - Monthly priorities calculated from the local ledger and goals, plus overdue tasks and active projects, in English, Spanish and Italian.
 - Failed transaction, task, deletion and goal writes preserve the current in-memory records; forms remain available to retry.

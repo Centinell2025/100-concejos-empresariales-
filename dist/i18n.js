@@ -67,6 +67,8 @@ withNotes|Con notas|With notes|Con note
 readTime|2 min de claridad|2 min of clarity|2 minuti di chiarezza
 saveError|No se pueden guardar los cambios. Exporta tu espacio para conservarlo.|Changes cannot be saved. Export your workspace to keep them.|Impossibile salvare le modifiche. Esporta lo spazio per conservarle.
 exported|Tu espacio se ha exportado.|Your workspace has been exported.|Il tuo spazio è stato esportato.
+backupTooLarge|La copia supera el límite de 10 MB por archivo.|The backup exceeds the 10 MB file limit.|La copia supera il limite di 10 MB per file.
+backupExportFailed|No se pudo crear una copia compatible con la restauración.|A restorable backup could not be created.|Impossibile creare una copia ripristinabile.
 cat0|Estrategia|Strategy|Strategia
 cat1|Clientes|Customers|Clienti
 cat2|Ventas|Sales|Vendite

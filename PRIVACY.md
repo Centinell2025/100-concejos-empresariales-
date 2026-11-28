@@ -1,6 +1,6 @@
 # Beacon Business — Privacy Policy
 
-Beacon of the Eagle LLC · Effective November 22, 2026 · Android version 1.0.0EnglishEspañolItaliano
+Beacon of the Eagle LLC · Effective November 22, 2026 · Android versions 1.0.0–1.0.2
 
 
 

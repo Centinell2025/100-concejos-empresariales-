@@ -3,6 +3,9 @@ let state={favorites:[],done:[],notes:{}};
 let storageAvailable=true;
 try{const saved=JSON.parse(localStorage.getItem('beacon-business-v1'));if(saved&&typeof saved==='object')state={favorites:Array.isArray(saved.favorites)?[...new Set(saved.favorites.filter(id=>tips.some(t=>t.id===id)))]:[],done:Array.isArray(saved.done)?[...new Set(saved.done.filter(id=>tips.some(t=>t.id===id)))]:[],notes:saved.notes&&typeof saved.notes==='object'?saved.notes:{}}}catch{storageAvailable=false}
 let managementSnapshot=null;
+let visibleTipIds=[];
+let readingOrder=[];
+
 let view='all',category=-1,selected=1,query='',sort='default';
 const palette=Array.from({length:10},(_,i)=>[['#eaf1ff','#2b5fa9'],['#e8f4fc','#26698f'],['#eef0ff','#525fa8']][i%3]);
 function persist(){try{localStorage.setItem('beacon-business-v1',JSON.stringify(state))}catch{storageAvailable=false;toast(tr('saveError'))}updateStats()}
@@ -14,16 +17,32 @@ function normalize(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').t
 function render(){
  const titles={all:['library','libraryIntro'],favorites:['favoriteHeading','favoriteIntro'],plan:['progress','progressIntro']};
  $('#section-title').textContent=tr(titles[view][0]);$('#section-subtitle').textContent=tr(titles[view][1]);
- document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view&&category===-1);b.setAttribute('aria-pressed',String(b.dataset.view===view&&category===-1))});
+ const learningVisible=!$('#tips-workspace')?.hidden;
+ document.querySelectorAll('[data-view]').forEach(button=>{
+   const active=learningVisible && button.dataset.view===view && category===-1;
+   button.classList.toggle('active',active);
+   button.setAttribute('aria-pressed',String(active));
+ });
  document.querySelectorAll('[data-cat]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.cat)===category);b.setAttribute('aria-pressed',String(Number(b.dataset.cat)===category))});
  let list=tips.filter(t=>(category===-1||t.category===category)&&(view!=='favorites'||state.favorites.includes(t.id))&&(view!=='plan'||state.done.includes(t.id)||!!state.notes[t.id])&&normalize(t.title+' '+t.body+' '+t.action+' '+categories[t.category][0]).includes(normalize(query)));
  if(sort==='az')list.sort((a,b)=>a.title.localeCompare(b.title,language));if(sort==='pending')list.sort((a,b)=>Number(state.done.includes(a.id))-Number(state.done.includes(b.id)));
+ visibleTipIds=list.map(t=>t.id);
  $('#result-count').textContent=list.length+' '+tr(list.length===1?'tipSingular':'tipPlural');$('#cards').replaceChildren();$('#empty').hidden=list.length>0;
  $('#empty-text').textContent=tr(query||category!==-1?'trySearch':view==='favorites'?'emptyFavorites':view==='plan'?'emptyProgress':'trySearch');
- for(const t of list){const done=state.done.includes(t.id),fav=state.favorites.includes(t.id);const card=document.createElement('article');card.className='card';card.style.setProperty('--tag-bg',palette[t.category][0]);card.style.setProperty('--tag-color',palette[t.category][1]);card.innerHTML=`<div class="card-top"><span class="tag">${categories[t.category][1]} &nbsp;${categories[t.category][0]}</span><button class="icon-button ${fav?'saved':''}" aria-label="${tr(fav?'removeFavorite':'saveFavorite')}: ${t.title}" aria-pressed="${fav}">${fav?'♥':'♡'}</button></div><div class="card-index">${tr('tip')} ${String(t.id).padStart(3,'0')}</div><h3>${t.title}</h3><p>${t.body}</p><div class="card-bottom"><button class="read-button" aria-label="${tr('readTip')}: ${t.title}">${tr('exploreTip')} ＋</button><span class="card-status ${done?'done':''}">${done?'✓ '+tr('completed'):state.notes[t.id]?'✎ '+tr('withNotes'):tr('readTime')}</span></div>`;card.querySelector('.icon-button').onclick=()=>toggle('favorites',t.id);card.querySelector('.read-button').onclick=()=>openTip(t.id);$('#cards').append(card)}
+ for(const t of list){const done=state.done.includes(t.id),fav=state.favorites.includes(t.id);const card=document.createElement('article');card.className='card';card.style.setProperty('--tag-bg',palette[t.category][0]);card.style.setProperty('--tag-color',palette[t.category][1]);card.innerHTML=`<div class="card-top"><span class="tag">${categories[t.category][1]} &nbsp;${categories[t.category][0]}</span><button class="icon-button ${fav?'saved':''}" aria-label="${tr(fav?'removeFavorite':'saveFavorite')}: ${t.title}" aria-pressed="${fav}">${fav?'♥':'♡'}</button></div><div class="card-index">${tr('tip')} ${String(t.id).padStart(3,'0')}</div><h3>${t.title}</h3><p>${t.body}</p><div class="card-bottom"><button class="read-button" aria-label="${tr('readTip')}: ${t.title}">${tr('exploreTip')} ＋</button><span class="card-status ${done?'done':''}">${done?'✓ '+tr('completed'):state.notes[t.id]?'✎ '+tr('withNotes'):tr('readTime')}</span></div>`;card.querySelector('.icon-button').onclick=()=>toggle('favorites',t.id);card.querySelector('.read-button').onclick=()=>openTip(t.id,visibleTipIds);$('#cards').append(card)}
 }
 function updateDetailButtons(){const fav=state.favorites.includes(selected),done=state.done.includes(selected);$('#detail-fav').textContent=(fav?'♥ ':'♡ ')+tr(fav?'savedFavorite':'saveFavorite');$('#detail-fav').setAttribute('aria-pressed',String(fav));$('#detail-done').textContent=(done?'✓ ':'')+tr(done?'unmarkDone':'markDone');$('#detail-done').setAttribute('aria-pressed',String(done))}
-function openTip(id){selected=id;const t=tips[id-1];$('#detail-category').textContent=categories[t.category][1]+' '+categories[t.category][0];$('#detail-number').textContent=tr('tip')+' '+String(id).padStart(3,'0');$('#detail-title').textContent=t.title;$('#detail-body').textContent=t.body;$('#detail-action').textContent=t.action;$('#note').value=typeof state.notes[id]==='string'?state.notes[id]:'';$('#detail-position').textContent=id+' / 100';$('#prev').disabled=id===1;$('#next').disabled=id===100;updateDetailButtons();if(!$('#detail').open){$('#detail').showModal();document.body.style.overflow='hidden'}$('#detail').scrollTop=0}
+function openTip(id, order=tips.map(t=>t.id)){
+ const position=order.indexOf(id);
+ if(position<0)return;
+ selected=id;
+ readingOrder=order;
+ const t=tips[id-1];
+ $('#detail-category').textContent=categories[t.category][1]+' '+categories[t.category][0];$('#detail-number').textContent=tr('tip')+' '+String(id).padStart(3,'0');$('#detail-title').textContent=t.title;$('#detail-body').textContent=t.body;$('#detail-action').textContent=t.action;$('#note').value=typeof state.notes[id]==='string'?state.notes[id]:'';$('#detail-position').textContent=(position+1)+' / '+order.length;$('#prev').disabled=position===0;$('#next').disabled=position===order.length-1;updateDetailButtons();if(!$('#detail').open){$('#detail').showModal();document.body.style.overflow='hidden'}$('#detail').scrollTop=0}
+function moveTip(step){
+ const nextId=readingOrder[readingOrder.indexOf(selected)+step];
+ if(nextId!==undefined)openTip(nextId,readingOrder);
+}
 function setCategory(c){category=c;render()}
 function buildCategories(){
  $('#chips').replaceChildren();$('#side-categories').replaceChildren();
@@ -43,15 +62,33 @@ function markStaticText(){
  $('.side-bottom small').dataset.i18n='tagline';$('footer span:last-child').dataset.i18n='localNotice';
  $('#export').dataset.i18n='export';$('#export').title=tr('exportHelp');
  const label=document.createElement('label');label.className='language-label';label.innerHTML='<span class="sr-only" data-i18n="language"></span><select id="language" data-i18n-label="language"><option value="en">English</option><option value="es">Español</option><option value="it">Italiano</option></select>';$('.top-actions').prepend(label);$('#language').value=language;
- $('#language').onchange=e=>{language=e.target.value;try{localStorage.setItem('beacon-business-language',language)}catch{}applyLocale();buildCategories();dailyTip();render();$('#export').title=tr('exportHelp');if($('#detail').open)openTip(selected);document.dispatchEvent(new CustomEvent('beacon-language'))};
+ $('#language').onchange=e=>{language=e.target.value;try{localStorage.setItem('beacon-business-language',language)}catch{}applyLocale();buildCategories();dailyTip();render();$('#export').title=tr('exportHelp');if($('#detail').open)openTip(selected,readingOrder);document.dispatchEvent(new CustomEvent('beacon-language'))};
 }
-function exportWorkspace(){let business=null;try{business=managementSnapshot?managementSnapshot():JSON.parse(localStorage.getItem('beacon-management-v1'))}catch{}const data={app:'Beacon Business',version:2,language,exportedAt:new Date().toISOString(),business,learning:{favorites:state.favorites,completed:state.done,notes:state.notes}};if(window.BeaconAndroid){window.BeaconAndroid.exportBackup(JSON.stringify(data,null,2));return;}const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='beacon-business-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(tr('exported'))}
+function exportWorkspace(){
+ let text, file;
+ try{
+   const business=managementSnapshot?managementSnapshot():JSON.parse(localStorage.getItem('beacon-management-v1'));
+   const learning={favorites:state.favorites,completed:state.done,notes:state.notes};
+   text=JSON.stringify({app:'Beacon Business',version:2,language,exportedAt:new Date().toISOString(),business,learning});
+   file=new Blob([text],{type:'application/json'});
+   if(file.size>BEACON_BACKUP_MAX_BYTES){toast(tr('backupTooLarge'));return}
+   validateBeaconBackup(text);
+ }catch{toast(tr('backupExportFailed'));return}
+ if(window.BeaconAndroid){window.BeaconAndroid.exportBackup(text);return}
+ const url=URL.createObjectURL(file);
+ const link=document.createElement('a');
+ link.href=url;
+ link.download='beacon-business-backup.json';
+ link.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ toast(tr('exported'));
+}
 document.addEventListener('beacon-export-result',e=>{if(e.detail==='saved')toast(tr('exportSuccess'));else if(e.detail==='error')toast(tr('saveError'))});
 function init(){
  markStaticText();applyLocale();buildCategories();
  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;category=-1;query='';$('#search').value='';render();$('.library').scrollIntoView({behavior:'smooth',block:'start'})});
  $('#search').oninput=e=>{query=e.target.value;render()};$('#sort').onchange=e=>{sort=e.target.value;render()};$('#reset').onclick=()=>{view='all';category=-1;query='';$('#search').value='';render()};
- dailyTip();$('#random').onclick=()=>openTip(Math.floor(Math.random()*100)+1);$('#detail-fav').onclick=()=>toggle('favorites',selected);$('#detail-done').onclick=()=>toggle('done',selected);$('#note').oninput=e=>{state.notes[selected]=e.target.value;if(!e.target.value.trim())delete state.notes[selected];persist();render()};$('#prev').onclick=()=>openTip(selected-1);$('#next').onclick=()=>openTip(selected+1);$('#close').onclick=()=>$('#detail').close();$('#detail').addEventListener('close',()=>document.body.style.overflow='');$('#detail').onclick=e=>{if(e.target===$('#detail')){const r=$('#detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#detail').close()}};
+ dailyTip();$('#random').onclick=()=>openTip(Math.floor(Math.random()*100)+1);$('#detail-fav').onclick=()=>toggle('favorites',selected);$('#detail-done').onclick=()=>toggle('done',selected);$('#note').oninput=e=>{state.notes[selected]=e.target.value;if(!e.target.value.trim())delete state.notes[selected];persist();render()};$('#prev').onclick=()=>moveTip(-1);$('#next').onclick=()=>moveTip(1);$('#close').onclick=()=>$('#detail').close();$('#detail').addEventListener('close',()=>document.body.style.overflow='');$('#detail').onclick=e=>{if(e.target===$('#detail')){const r=$('#detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#detail').close()}};
  $('#export').onclick=exportWorkspace;const privacyLink=document.createElement('a');privacyLink.href='privacy.html';privacyLink.className='text-button privacy-link';privacyLink.dataset.i18n='privacy';privacyLink.textContent=tr('privacy');$('.top-actions').append(privacyLink);
  document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!$('#detail').open&&!$('#tips-workspace')?.hidden){e.preventDefault();$('#search').focus()}});updateStats();render();if(!storageAvailable)toast(tr('saveError'));
  if(!window.BeaconAndroid&&'serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
