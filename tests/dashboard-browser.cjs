@@ -49,6 +49,7 @@ async function run() {
       await form.locator('[name=description]').fill('Prueba de registro');
       await form.locator('[name=amount]').fill(amount);
       await form.locator('[type=submit]').click();
+      await page.locator('#record-dialog').waitFor({state: 'hidden'});
     }
 
     assert.match(await page.locator('#cash-result-amount').innerText(), /360/);

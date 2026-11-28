@@ -44,6 +44,7 @@ test('exports and restores a complete workspace with a long Unicode note', async
   await target.locator('#enter-workspace').click();
   await target.locator('#backup-file').setInputFiles(backup);
   await target.locator('#confirm-restore').click();
+  await target.locator('#enhancement-dialog').waitFor({state:'hidden'});
   await target.reload();
   assert.equal(await target.locator('#beacon-cover').evaluate(cover => cover.open), false);
   const restored = await target.evaluate(() => ({
@@ -57,13 +58,18 @@ test('exports and restores a complete workspace with a long Unicode note', async
   assert.deepEqual(restored.learning.done, [1]);
   assert.equal(restored.learning.notes['1'], note);
   await target.locator('#undo-restore').click();
+  await target.waitForFunction(() => window.BeaconBusiness.getSnapshot().transactions.length === 0);
   assert.equal(await target.evaluate(() => window.BeaconBusiness.getSnapshot().transactions.length), 0);
 
   // A UTF-8 file can exceed the Android limit even when its JS string is shorter.
   await source.evaluate(() => {
-    state.notes[1] = '界'.repeat(3_333_334);
+    const realGet = Storage.prototype.getItem;
+    Storage.prototype.getItem = function(key) {
+      if (key !== 'beacon-business-v1') return realGet.call(this,key);
+      return JSON.stringify({favorites:[], done:[], notes:{1:'界'.repeat(3_333_334)}});
+    };
     window.BeaconAndroid = {exportBackup() { throw Error('Oversized export reached Android'); }};
   });
   await source.locator('#export').click();
-  assert.match(await source.locator('#toast').textContent(), /10 MB/);
+  await source.locator('#toast').filter({hasText:'10 MB'}).waitFor();
 });

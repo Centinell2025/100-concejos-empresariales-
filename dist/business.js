@@ -2,15 +2,95 @@
 const money=n=>new Intl.NumberFormat(locale(),{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n/100);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-let db={transactions:[],clients:[],projects:[],tasks:[],goals:{}};try{const stored=JSON.parse(localStorage.getItem('beacon-management-v1'));for(const k of Object.keys(db))if(Array.isArray(stored?.[k]))db[k]=stored[k].filter(x=>x&&typeof x.id==='string');if(stored?.goals&&typeof stored.goals==='object'&&!Array.isArray(stored.goals))db.goals=stored.goals}catch{}
-managementSnapshot=()=>structuredClone(db);
+const businessKey='beacon-management-v1';
+const collections=['transactions','clients','projects','tasks'];
+function readBusiness(){
+  const raw=localStorage.getItem(businessKey);
+  const saved=raw===null ? {} : JSON.parse(raw);
+  if(!saved || typeof saved!=='object' || Array.isArray(saved))throw Error('business data');
+  const result={...saved};
+  for(const kind of collections){
+    result[kind]=saved[kind]??[];
+    if(!Array.isArray(result[kind]))throw Error('business collection');
+  }
+  result.goals=saved.goals??{};
+  if(!result.goals || typeof result.goals!=='object' || Array.isArray(result.goals))throw Error('business goals');
+  return result;
+}
+let db={transactions:[],clients:[],projects:[],tasks:[],goals:{}};
+try{db=readBusiness()}catch{}
+function refreshFromStorage(){db=readBusiness();return structuredClone(db)}
+
+// Every workspace replacement and business read-modify-write runs under the same origin lock.
+// WebViews without Web Locks use an IndexedDB read/write transaction for mutual exclusion.
+function withWorkspaceLock(operation){
+  if(navigator.locks?.request)return navigator.locks.request('beacon-workspace-write',()=>operation());
+  return new Promise((resolve,reject)=>{
+    const open=indexedDB.open('beacon-workspace-lock',1);
+    open.onupgradeneeded=()=>open.result.createObjectStore('writes');
+    open.onerror=()=>reject(open.error);
+    open.onsuccess=()=>{
+      const connection=open.result;
+      const transaction=connection.transaction('writes','readwrite');
+      let result, failure;
+      transaction.oncomplete=()=>{connection.close();resolve(result)};
+      transaction.onabort=()=>{connection.close();reject(failure||transaction.error)};
+      transaction.objectStore('writes').get('workspace').onsuccess=()=>{
+        try{result=operation()}catch(error){failure=error;transaction.abort()}
+      };
+    };
+  });
+}
+function sameRecord(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+
 let page='dashboard',month=today().slice(0,7),search='',filter='all',editing=null;
 const icons={dashboard:'▦',transactions:'▤',clients:'♧',projects:'▣',tasks:'✓'};
 const main=$('main');const learning=document.createElement('div');learning.id='tips-workspace';while(main.firstChild)learning.append(main.firstChild);main.append(learning);const workspace=document.createElement('section');workspace.id='business-workspace';main.prepend(workspace);
 const nav=document.createElement('nav');nav.className='business-nav';nav.setAttribute('aria-label',tr('management'));const navLabel=document.createElement('div');navLabel.className='side-label business-label';navLabel.dataset.i18n='management';navLabel.textContent=tr('management');const sidebar=$('.sidebar');sidebar.insertBefore(navLabel,sidebar.querySelector('.side-label'));sidebar.insertBefore(nav,navLabel.nextSibling);
 for(const key of Object.keys(icons)){const b=document.createElement('button');b.className='nav';b.dataset.businessPage=key;b.innerHTML=`<span>${icons[key]}</span><span class="nav-text" data-i18n="${key}">${tr(key)}</span>`;b.onclick=()=>go(key);nav.append(b)}
 const recordDialog=document.createElement('dialog');recordDialog.id='record-dialog';document.body.append(recordDialog);recordDialog.addEventListener('close',()=>document.body.style.overflow='');
-function save(next=db){try{localStorage.setItem('beacon-management-v1',JSON.stringify(next));db=next;return true}catch{toast(tr('saveError'));return false}}
+function showSaveIssue(key){
+  const msg=tr(key);
+  const dialog=document.querySelector('dialog[open] .form-error');
+  if(dialog){dialog.textContent=msg;dialog.hidden=false}
+  toast(msg);
+}
+async function changeBusiness(mutate){
+  try{
+    return await withWorkspaceLock(()=>{
+      if(localStorage.getItem('beacon-restore-journal-v1')!==null){
+        showSaveIssue('workspaceRecover');return false;
+      }
+      const latest=readBusiness();
+      const next=structuredClone(latest);
+      const reason=mutate(next);
+      if(reason){
+        db=latest;
+        draw();
+        showSaveIssue(reason);
+        return false;
+      }
+      localStorage.setItem(businessKey,JSON.stringify(next));
+      db=next;
+      return true;
+    });
+  }catch{showSaveIssue('saveError');return false}
+}
+window.addEventListener('storage',event=>{
+  if(event.key!==businessKey && event.key!==null)return;
+  try{refreshFromStorage();draw()}catch{showSaveIssue('saveError')}
+});
+async function toggleTask(id){
+  const expected=byId('tasks',id);
+  if(!expected)return;
+  const saved=await changeBusiness(fresh=>{
+    const task=fresh.tasks.find(row=>row.id===id);
+    if(!sameRecord(expected,task))return 'recordChanged';
+    task.status=task.status==='done'?'pending':'done';
+  });
+  if(saved)draw();
+}
+
 function go(next){page=next;search='';filter='all';learning.hidden=true;workspace.hidden=false;$('#side-categories').hidden=true;$('.categories-label').hidden=true;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false')});draw();window.scrollTo({top:0,behavior:'smooth'})}
 function showLearning(){learning.hidden=false;workspace.hidden=true;page='learning';$('#side-categories').hidden=false;$('.categories-label').hidden=false;document.querySelectorAll('[data-business-page]').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false')})}
 sidebar.addEventListener('click',e=>{if(e.target.closest('[data-view]'))showLearning()},true);
@@ -112,10 +192,23 @@ function taskRow(t){const overdue=t.dueDate&&t.dueDate<today()&&t.status!=='done
 function dashboard(){const data=totals(month);const done=db.tasks.filter(t=>t.status==='done').length;const pending=db.tasks.filter(t=>t.status!=='done').sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));const overdue=pending.filter(t=>t.dueDate&&t.dueDate<today()).length;return cashSummary(data)+`<div class="dashboard-middle">${chart()}<article class="biz-panel operations-panel"><div class="panel-heading"><div><h2>${tr('operations')}</h2><p>${tr('allRecords')}</p></div><span class="panel-icon">◈</span></div>${operationCard('activeClients',db.clients.filter(c=>c.status==='active').length,'♧')}${operationCard('activeProjects',db.projects.filter(p=>p.status==='inProgress').length,'▣')}${operationCard('taskCompletion',done+' / '+db.tasks.length,'✓')}${operationCard('overdueTasks',overdue,'◷')}<div class="completion-track"><span style="width:${db.tasks.length?done/db.tasks.length*100:0}%"></span></div></article></div><div class="dashboard-bottom"><article class="biz-panel"><div class="panel-heading"><h2>${tr('upcomingTasks')}</h2><button class="text-button" data-go="tasks">${tr('viewAll')}</button></div>${pending.length?pending.slice(0,4).map(taskRow).join(''):`<div class="panel-empty"><span>✓</span><p>${tr('noTasks')}</p>${button('addTask','tasks')}</div>`}</article><article class="biz-panel"><div class="panel-heading"><h2>${tr('recentEntries')}</h2><button class="text-button" data-go="transactions">${tr('viewAll')}</button></div>${data.rows.length?`<div class="recent-list">${[...data.rows].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(x=>`<div class="recent-row"><span class="transaction-icon ${x.type}">${x.type==='entryIncome'?'↗':'↘'}</span><div><strong>${esc(x.description)}</strong><small>${labelDate(x.date)} · ${tr(x.category)}</small></div><b class="${x.type}">${x.type==='entryIncome'?'+':'−'}${money(x.amount)}</b></div>`).join('')}</div>`:`<div class="panel-empty"><span>▤</span><p>${tr('noEntries')}</p>${button('addEntry','transactions')}</div>`}</article></div><section class="learning-banner"><span>✦</span><div><h3>${tr('learningTitle')}</h3><p>${tr('learningBody')}</p></div><button class="secondary" id="open-learning">${tr('openTips')}</button></section>`}
 const statusOptions={clients:['lead','active','inactive'],projects:['planned','inProgress','onHold','done'],tasks:['pending','inProgress','done'],transactions:['entryIncome','entryExpense']};
 function actionButtons(x){return `<div class="row-actions"><button data-edit="${esc(x.id)}" title="${tr('edit')}" aria-label="${tr('edit')}: ${esc(x.name||x.description)}">✎</button><button data-delete="${esc(x.id)}" title="${tr('delete')}" aria-label="${tr('delete')}: ${esc(x.name||x.description)}">×</button></div>`}
-function records(){const isLedger=page==='transactions';let rows=db[page].filter(x=>(!isLedger||x.date?.startsWith(month))&&(filter==='all'||(isLedger?x.type:x.status)===filter)&&normalize(Object.values(x).join(' ')).includes(normalize(search)));const addKeys={transactions:'addEntry',clients:'addClient',projects:'addProject',tasks:'addTask'};let content='';if(page==='transactions'){rows.sort((a,b)=>b.date.localeCompare(a.date));content=`<table><thead><tr>${['date','description','type','category','amount','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td>${labelDate(x.date)}</td><td><strong>${esc(x.description)}</strong></td><td><span class="status-pill ${x.type}">${tr(x.type)}</span></td><td>${tr(x.category)}</td><td class="money-cell">${money(x.amount)}</td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}else if(page==='clients'){content=`<table><thead><tr>${['name','company','email','status','opportunity','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${x.phone?`<small>${esc(x.phone)}</small>`:''}</td><td>${esc(x.company)||'—'}</td><td>${esc(x.email)||'—'}</td><td><span class="status-pill ${x.status}">${tr(x.status)}</span></td><td>${money(x.opportunity||0)}</td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}else if(page==='projects'){content=`<div class="project-grid">${rows.map(x=>{const tasks=db.tasks.filter(t=>t.project===x.id),done=tasks.filter(t=>t.status==='done').length;return `<article class="project-card"><div class="project-card-top"><span class="project-icon">▣</span><span class="status-pill ${x.status}">${tr(x.status)}</span></div><h3>${esc(x.name)}</h3><p>${esc(byId('clients',x.client)?.name)||tr('unassigned')}</p><dl><div><dt>${tr('budget')}</dt><dd>${money(x.budget||0)}</dd></div><div><dt>${tr('dueDate')}</dt><dd>${x.dueDate?labelDate(x.dueDate):'—'}</dd></div></dl><div class="completion-track"><span style="width:${tasks.length?done/tasks.length*100:0}%"></span></div><div class="project-card-bottom"><small>${done} / ${tasks.length} ${tr('tasks').toLocaleLowerCase(language)}</small>${actionButtons(x)}</div></article>`}).join('')}</div>`}else{content=`<table><thead><tr>${['name','project','dueDate','priority','status','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td><div class="task-name"><button class="task-check ${x.status==='done'?'checked':''}" data-toggle-task="${esc(x.id)}" aria-label="${tr(x.status==='done'?'taskReopen':'taskDone')}: ${esc(x.name)}">${x.status==='done'?'✓':''}</button><strong>${esc(x.name)}</strong></div></td><td>${esc(byId('projects',x.project)?.name)||'—'}</td><td class="${x.status!=='done'&&x.dueDate&&x.dueDate<today()?'overdue':''}">${x.dueDate?labelDate(x.dueDate):'—'}</td><td><span class="status-pill ${x.priority}">${tr(x.priority)}</span></td><td><span class="status-pill ${x.status}">${tr(x.status)}</span></td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}
+function clientTitle(client){
+ return [client.name,client.company || client.email || client.phone].filter(Boolean).join(' · ');
+}
+function matchesRecordSearch(record){
+ if(!search)return true;
+ let related='';
+ if(page==='projects'){
+   const client=byId('clients',record.client);
+   if(client)related=clientTitle(client);
+ }
+ if(page==='tasks')related=byId('projects',record.project)?.name || '';
+ return normalize(Object.values(record).join(' ')+' '+related).includes(normalize(search));
+}
+function records(){const isLedger=page==='transactions';let rows=db[page].filter(x=>(!isLedger||x.date?.startsWith(month))&&(filter==='all'||(isLedger?x.type:x.status)===filter)&&matchesRecordSearch(x));const addKeys={transactions:'addEntry',clients:'addClient',projects:'addProject',tasks:'addTask'};let content='';if(page==='transactions'){rows.sort((a,b)=>b.date.localeCompare(a.date));content=`<table><thead><tr>${['date','description','type','category','amount','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td>${labelDate(x.date)}</td><td><strong>${esc(x.description)}</strong></td><td><span class="status-pill ${x.type}">${tr(x.type)}</span></td><td>${tr(x.category)}</td><td class="money-cell">${money(x.amount)}</td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}else if(page==='clients'){content=`<table><thead><tr>${['name','company','email','status','opportunity','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${x.phone?`<small>${esc(x.phone)}</small>`:''}</td><td>${esc(x.company)||'—'}</td><td>${esc(x.email)||'—'}</td><td><span class="status-pill ${x.status}">${tr(x.status)}</span></td><td>${money(x.opportunity||0)}</td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}else if(page==='projects'){content=`<div class="project-grid">${rows.map(x=>{const tasks=db.tasks.filter(t=>t.project===x.id),done=tasks.filter(t=>t.status==='done').length;return `<article class="project-card"><div class="project-card-top"><span class="project-icon">▣</span><span class="status-pill ${x.status}">${tr(x.status)}</span></div><h3>${esc(x.name)}</h3><p>${esc(byId('clients',x.client)?.name)||tr('unassigned')}</p><dl><div><dt>${tr('budget')}</dt><dd>${money(x.budget||0)}</dd></div><div><dt>${tr('dueDate')}</dt><dd>${x.dueDate?labelDate(x.dueDate):'—'}</dd></div></dl><div class="completion-track"><span style="width:${tasks.length?done/tasks.length*100:0}%"></span></div><div class="project-card-bottom"><small>${done} / ${tasks.length} ${tr('tasks').toLocaleLowerCase(language)}</small>${actionButtons(x)}</div></article>`}).join('')}</div>`}else{content=`<table><thead><tr>${['name','project','dueDate','priority','status','actions'].map(k=>`<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr><td><div class="task-name"><button class="task-check ${x.status==='done'?'checked':''}" data-toggle-task="${esc(x.id)}" aria-label="${tr(x.status==='done'?'taskReopen':'taskDone')}: ${esc(x.name)}">${x.status==='done'?'✓':''}</button><strong>${esc(x.name)}</strong></div></td><td>${esc(byId('projects',x.project)?.name)||'—'}</td><td class="${x.status!=='done'&&x.dueDate&&x.dueDate<today()?'overdue':''}">${x.dueDate?labelDate(x.dueDate):'—'}</td><td><span class="status-pill ${x.priority}">${tr(x.priority)}</span></td><td><span class="status-pill ${x.status}">${tr(x.status)}</span></td><td>${actionButtons(x)}</td></tr>`).join('')}</tbody></table>`}
 return header(page,page+'Intro',(isLedger?periodControl():'')+button(addKeys[page],page))+(page==='clients'?`<div class="pipeline-summary"><span>${tr('pipeline')}</span><strong>${money(db.clients.filter(c=>c.status==='lead').reduce((n,c)=>n+(c.opportunity||0),0))}</strong><small>${tr('pipelineNote')}</small></div>`:'')+`<article class="biz-panel records-panel"><div class="records-toolbar"><label class="search"><span>⌕</span><input id="record-search" type="search" aria-label="${tr('searchRecords')}" placeholder="${tr('searchRecords')}" value="${esc(search)}"></label><select id="record-filter" aria-label="${tr('status')}"><option value="all">${tr('all')}</option>${statusOptions[page].map(k=>`<option value="${k}" ${filter===k?'selected':''}>${tr(k)}</option>`).join('')}</select><span>${rows.length} ${tr('recordsCount')}</span></div>${rows.length?`<div class="table-scroll">${content}</div>`:`<div class="panel-empty large-empty"><span>${icons[page]}</span><h2>${tr(search||filter!=='all'?'noResults':isLedger?'noEntries':'noRecords')}</h2>${button(addKeys[page],page)}</div>`}</article>`+(page==='projects'?`<p class="kpi-footnote">${tr('referenceOnly')}</p>`:'')+(isLedger?`<p class="kpi-footnote">${tr('cashBasis')}</p>`:'')}
-function draw(){if(page==='learning')return;workspace.innerHTML=(page==='dashboard'?dashboard():page==='reports'&&window.BeaconReports?window.BeaconReports.render(db,month):page==='introduction'&&window.BeaconIntroduction?window.BeaconIntroduction.render():records())+`<footer><span>© ${new Date().getFullYear()} Beacon of the Eagle LLC</span><span>${tr('localNotice')}</span></footer>`;document.querySelectorAll('[data-business-page]').forEach(b=>{b.classList.toggle('active',b.dataset.businessPage===page);b.setAttribute('aria-pressed',String(b.dataset.businessPage===page))});workspace.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>form(b.dataset.add,undefined,b.dataset.entryType));workspace.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));workspace.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>form(page,b.dataset.edit));workspace.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>remove(page,b.dataset.delete));workspace.querySelectorAll('[data-toggle-task]').forEach(b=>b.onclick=()=>{const next=structuredClone(db),item=next.tasks.find(x=>x.id===b.dataset.toggleTask);item.status=item.status==='done'?'pending':'done';if(save(next))draw()});if($('#biz-month'))$('#biz-month').onchange=e=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value)){month=e.target.value;draw()}};if($('#record-search'))$('#record-search').oninput=e=>{const caret=e.target.selectionStart;search=e.target.value;draw();$('#record-search').focus();$('#record-search').setSelectionRange(caret,caret)};if($('#record-filter'))$('#record-filter').onchange=e=>{filter=e.target.value;draw()};if($('#open-learning'))$('#open-learning').onclick=()=>{showLearning();view='all';category=-1;query='';$('#search').value='';render();window.scrollTo({top:0,behavior:'smooth'})};document.dispatchEvent(new CustomEvent('beacon-business-render',{detail:{page,month}}))}
-function field(key,value='',type='text',required=false){return `<label class="form-field"><span>${tr(key)}${required?' *':''}</span><input name="${key}" type="${type}" value="${esc(value)}" ${required?'required':''} ${type==='number'?'min="0" max="9999999999.99" step="0.01"':'maxlength="300"'}></label>`}
+function draw(){if(page==='learning')return;workspace.innerHTML=(page==='dashboard'?dashboard():page==='reports'&&window.BeaconReports?window.BeaconReports.render(db,month):page==='introduction'&&window.BeaconIntroduction?window.BeaconIntroduction.render():records())+`<footer><span>© ${new Date().getFullYear()} Beacon of the Eagle LLC</span><span>${tr('localNotice')}</span></footer>`;document.querySelectorAll('[data-business-page]').forEach(b=>{b.classList.toggle('active',b.dataset.businessPage===page);b.setAttribute('aria-pressed',String(b.dataset.businessPage===page))});workspace.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>form(b.dataset.add,undefined,b.dataset.entryType));workspace.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));workspace.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>form(page,b.dataset.edit));workspace.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>remove(page,b.dataset.delete));workspace.querySelectorAll('[data-toggle-task]').forEach(b=>b.onclick=()=>toggleTask(b.dataset.toggleTask));if($('#biz-month'))$('#biz-month').onchange=e=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value)){month=e.target.value;draw()}};if($('#record-search'))$('#record-search').oninput=e=>{const caret=e.target.selectionStart;search=e.target.value;draw();$('#record-search').focus();$('#record-search').setSelectionRange(caret,caret)};if($('#record-filter'))$('#record-filter').onchange=e=>{filter=e.target.value;draw()};if($('#open-learning'))$('#open-learning').onclick=()=>{showLearning();view='all';category=-1;query='';$('#search').value='';render();window.scrollTo({top:0,behavior:'smooth'})};document.dispatchEvent(new CustomEvent('beacon-business-render',{detail:{page,month}}))}
+function field(key,value='',type='text',required=false){return `<label class="form-field"><span>${tr(key)}${required?' *':''}</span><input name="${key}" type="${type}" value="${esc(value)}" ${required?'required':''} ${type==='date'?'min="1900-01-01" max="9999-12-31"':'maxlength="300"'}></label>` }
 function select(key,options,value){return `<label class="form-field"><span>${tr(key)}</span><select name="${key}">${options.map(([v,l])=>`<option value="${esc(v)}" ${value===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`}
 function form(kind,id,entryType){
   editing={kind,id,entryType};
@@ -123,9 +216,100 @@ function form(kind,id,entryType){
   const defaultType=entryType==='entryExpense'?'entryExpense':'entryIncome';
   const currentDate=today();
   const entryDate=currentDate.startsWith(month+'-')?currentDate:month+'-01';
-  let fields='';if(kind==='transactions')fields=select('type',[['entryIncome',tr('entryIncome')],['entryExpense',tr('entryExpense')]],item.type||defaultType)+field('date',item.date||entryDate,'date',true)+field('description',item.description,'text',true)+field('amount',item.amount===undefined?'':(item.amount/100).toFixed(2),'number',true)+select('category',['sales','services','software','marketing','operationsCategory','other'].map(k=>[k,tr(k)]),item.category||(defaultType==='entryExpense'?'operationsCategory':'sales'));if(kind==='clients')fields=field('name',item.name,'text',true)+field('company',item.company)+field('email',item.email,'email')+field('phone',item.phone,'tel')+select('status',statusOptions.clients.map(k=>[k,tr(k)]),item.status||'lead')+field('opportunity',item.opportunity===undefined?'':(item.opportunity/100).toFixed(2),'number');if(kind==='projects')fields=field('name',item.name,'text',true)+select('status',statusOptions.projects.map(k=>[k,tr(k)]),item.status||'planned')+select('client',[['',tr('none')],...db.clients.map(c=>[c.id,c.name])],item.client||'')+field('budget',item.budget===undefined?'':(item.budget/100).toFixed(2),'number')+field('dueDate',item.dueDate,'date');if(kind==='tasks')fields=field('name',item.name,'text',true)+select('status',statusOptions.tasks.map(k=>[k,tr(k)]),item.status||'pending')+select('priority',['high','medium','low'].map(k=>[k,tr(k)]),item.priority||'medium')+select('project',[['',tr('none')],...db.projects.map(p=>[p.id,p.name])],item.project||'')+field('dueDate',item.dueDate,'date');fields+=`<label class="form-field full-width"><span>${tr('notes')}</span><textarea name="notes" rows="3" maxlength="5000">${esc(item.notes||'')}</textarea></label>`;recordDialog.innerHTML=`<div class="dialog-top"><div class="eyebrow">${tr(kind)}</div><button class="icon-button" id="record-close" aria-label="${tr('close')}">×</button></div><h2>${tr(id?'editRecord':'newRecord')}</h2><form id="record-form"><div class="form-grid">${fields}</div><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary" type="button" id="record-cancel">${tr('cancel')}</button><button class="primary" type="submit">${tr('save')}</button></div></form>`;$('#record-close').onclick=$('#record-cancel').onclick=()=>recordDialog.close();$('#record-form').onsubmit=e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));for(const key of ['name','description','company','email','phone','notes'])if(data[key])data[key]=data[key].trim();if((kind==='transactions'&&!data.description)||(kind!=='transactions'&&!data.name))return;for(const key of ['amount','budget','opportunity'])if(key in data){const v=Number(data[key]||0);if(!Number.isFinite(v)||v<0||(key==='amount'&&v<=0)||Math.abs(Math.round(v*100)-v*100)>.00001){$('.form-error').textContent=tr('amountInvalid');$('.form-error').hidden=false;return}data[key]=Math.round(v*100)}const record={...data,id:id||crypto.randomUUID(),updatedAt:new Date().toISOString()};const next=structuredClone(db);if(id)next[kind]=next[kind].map(x=>x.id===id?record:x);else next[kind].push(record);if(!save(next))return;recordDialog.close();draw();toast(tr('saved'))};if(!recordDialog.open){recordDialog.showModal();document.body.style.overflow='hidden'}}
-function remove(kind,id){const index=db[kind].findIndex(x=>x.id===id);if(index<0)return;const next=structuredClone(db);const [record]=next[kind].splice(index,1);if(!save(next))return;draw();toast(tr('deleted')+' ');clearTimeout(toastTimer);const undo=document.createElement('button');undo.textContent=tr('undo');undo.className='undo-button';undo.onclick=()=>{const next=structuredClone(db);next[kind].splice(Math.min(index,next[kind].length),0,record);if(!save(next))return;draw();toast(tr('restored'))};$('#toast').append(undo);toastTimer=setTimeout(()=>$('#toast').hidden=true,15000)}
+  let fields='';if(kind==='transactions')fields=select('type',[['entryIncome',tr('entryIncome')],['entryExpense',tr('entryExpense')]],item.type||defaultType)+field('date',item.date||entryDate,'date',true)+field('description',item.description,'text',true)+BeaconMoneyInput.field('amount','amount',item.amount,{required:true,minimum:1})+select('category',['sales','services','software','marketing','operationsCategory','other'].map(k=>[k,tr(k)]),item.category||(defaultType==='entryExpense'?'operationsCategory':'sales'));if(kind==='clients')fields=field('name',item.name,'text',true)+field('company',item.company)+field('email',item.email,'email')+field('phone',item.phone,'tel')+select('status',statusOptions.clients.map(k=>[k,tr(k)]),item.status||'lead')+BeaconMoneyInput.field('opportunity','opportunity',item.opportunity);if(kind==='projects')fields=field('name',item.name,'text',true)+select('status',statusOptions.projects.map(k=>[k,tr(k)]),item.status||'planned')+select('client',[['',tr('none')],...db.clients.map(c=>[c.id,clientTitle(c)])],item.client||'')+BeaconMoneyInput.field('budget','budget',item.budget)+field('dueDate',item.dueDate,'date');if(kind==='tasks')fields=field('name',item.name,'text',true)+select('status',statusOptions.tasks.map(k=>[k,tr(k)]),item.status||'pending')+select('priority',['high','medium','low'].map(k=>[k,tr(k)]),item.priority||'medium')+select('project',[['',tr('none')],...db.projects.map(p=>[p.id,p.name])],item.project||'')+field('dueDate',item.dueDate,'date');fields+=`<label class="form-field full-width"><span>${tr('notes')}</span><textarea name="notes" rows="3" maxlength="5000">${esc(item.notes||'')}</textarea></label>`;recordDialog.innerHTML=`<div class="dialog-top"><div class="eyebrow">${tr(kind)}</div><button class="icon-button" id="record-close" aria-label="${tr('close')}">×</button></div><h2>${tr(id?'editRecord':'newRecord')}</h2><form id="record-form"><div class="form-grid">${fields}</div><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary" type="button" id="record-cancel">${tr('cancel')}</button><button class="primary" type="submit">${tr('save')}</button></div></form>`;
+  BeaconMoneyInput.bind($('#record-form'));
+  $('#record-close').onclick=$('#record-cancel').onclick=()=>recordDialog.close();$('#record-form').onsubmit=async e=>{e.preventDefault();const formEl=e.currentTarget,submit=formEl.querySelector('[type=submit]');if(submit.disabled)return;const data=Object.fromEntries(new FormData(formEl));for(const key of ['name','description','company','email','phone','notes'])if(data[key])data[key]=data[key].trim();const nameKey=kind==='transactions'?'description':'name';
+    if(!data[nameKey]){
+      showSaveIssue('requiredName');
+      formEl.elements[nameKey].focus();
+      return;
+    }
+    for(const fieldName of ['date','dueDate']){
+      if(data[fieldName] && !beaconValidRecordDate(data[fieldName])){
+        showSaveIssue('dateOutsideRange');
+        formEl.elements[fieldName].focus();
+        return;
+      }
+    }
+    const amounts=BeaconMoneyInput.read(e.currentTarget);
+    if(!amounts)return;
+    Object.assign(data,amounts);
+    const record={...data,id:id||crypto.randomUUID(),updatedAt:new Date().toISOString()};submit.disabled=true;
+    const saved=await changeBusiness(fresh=>{
+      const rows=fresh[kind];
+      if(id){
+        const index=rows.findIndex(row=>row.id===id);
+        if(index<0 || !sameRecord(item,rows[index]))return 'recordChanged';
+        rows[index]=record;
+      }else{
+        if(rows.length>=BEACON_COLLECTION_LIMIT)return 'collectionFull';
+        rows.push(record);
+      }
+      if(record.client && !fresh.clients.some(row=>row.id===record.client))return 'relationChanged';
+      if(record.project && !fresh.projects.some(row=>row.id===record.project))return 'relationChanged';
+    });
+    submit.disabled=false;
+    if(!saved)return;
+    recordDialog.close();draw();notifyRecordSaved(kind,record)};if(!recordDialog.open){recordDialog.showModal();document.body.style.overflow='hidden'}}
+function notifyRecordSaved(kind,record){
+ const period=kind==='transactions' ? record.date.slice(0,7) : month;
+ if(period===month){toast(tr('saved'));return}
+ const display=new Intl.DateTimeFormat(locale(),{month:'long',year:'numeric'}).format(new Date(period+'-01T12:00:00'));
+ toast(tr('savedPeriod').replace('{period}',display)+' ');
+ const link=document.createElement('button');
+ link.className='undo-button';
+ link.textContent=tr('viewSavedMonth');
+ link.onclick=()=>{month=period;go('transactions');$('#toast').hidden=true};
+ $('#toast').append(link);
+ clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>$('#toast').hidden=true,15000);
+}
+function askBeforeUnlinking(kind,id,count){
+ const dialog=document.createElement('dialog');
+ dialog.id='unlink-dialog';dialog.setAttribute('aria-labelledby','unlink-title');
+ const title=document.createElement('h2');title.id='unlink-title';title.textContent=tr('delete')+' · '+byId(kind,id).name;
+ const message=document.createElement('p');
+ message.textContent=tr(kind==='clients'?'removeClientLinks':'removeProjectLinks').replace('{count}',String(count));
+ const actions=document.createElement('div');actions.className='dialog-actions';
+ const cancel=document.createElement('button');cancel.className='secondary';cancel.textContent=tr('cancel');
+ cancel.onclick=()=>dialog.close();
+ const confirm=document.createElement('button');confirm.className='primary';confirm.textContent=tr('delete');
+ confirm.onclick=()=>{dialog.close();remove(kind,id,true)};
+ actions.append(cancel,confirm);dialog.append(title,message,actions);document.body.append(dialog);
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ dialog.showModal();cancel.focus();
+}
+async function remove(kind,id,confirmed=false){
+ if(!confirmed&&byId(kind,id)){
+   const count=kind==='clients' ? db.projects.filter(p=>p.client===id).length :
+     kind==='projects' ? db.tasks.filter(t=>t.project===id).length : 0;
+   if(count){askBeforeUnlinking(kind,id,count);return}
+ }
+ const index=db[kind].findIndex(x=>x.id===id);if(index<0)return;const record=db[kind][index];
+  const deleted=await changeBusiness(fresh=>{
+    const position=fresh[kind].findIndex(row=>row.id===id);
+    if(position<0 || !sameRecord(fresh[kind][position],record))return 'recordChanged';
+    fresh[kind].splice(position,1);
+  });
+  if(!deleted)return;draw();toast(tr('deleted')+' ');clearTimeout(toastTimer);const undo=document.createElement('button');undo.textContent=tr('undo');undo.className='undo-button';undo.onclick=async()=>{
+    const restored=await changeBusiness(fresh=>{
+      const rows=fresh[kind];
+      if(rows.some(row=>row.id===id))return 'recordChanged';
+      if(rows.length>=BEACON_COLLECTION_LIMIT)return 'collectionFull';
+      rows.splice(Math.min(index,rows.length),0,record);
+    });
+    if(restored){draw();toast(tr('restored'))}
+  };$('#toast').append(undo);toastTimer=setTimeout(()=>$('#toast').hidden=true,15000)}
 document.addEventListener('beacon-language',()=>{nav.setAttribute('aria-label',tr('management'));draw();if(recordDialog.open)form(editing.kind,editing.id,editing.entryType)});
-window.BeaconBusiness={getSnapshot:()=>structuredClone(db),getMonth:()=>month,go,goBack:()=>{if(page==='dashboard')return false;go('dashboard');return true},refresh:draw,setGoals:(period,values)=>{const next=structuredClone(db);next.goals[period]=values;const result=save(next);if(result)draw();return result},replaceData:value=>{db=value;draw()}};
+window.BeaconBusiness={getSnapshot:()=>structuredClone(db),getMonth:()=>month,go,goBack:()=>{if(page==='dashboard')return false;go('dashboard');return true},refresh:draw,withWorkspaceLock,refreshFromStorage,setGoals:async(period,values,expected=db.goals[period]||{income:0,expenses:0})=>{
+    const result=await changeBusiness(fresh=>{
+      const current=fresh.goals[period];
+      if(!sameRecord(expected,current||{income:0,expenses:0}))return 'recordChanged';
+      if(!current && Object.keys(fresh.goals).length>=1200)return 'goalsFull';
+      fresh.goals[period]=values;
+    });
+    if(result)draw();
+    return result;
+  },replaceData:value=>{db=value;draw()}};
 go('dashboard');
 })();

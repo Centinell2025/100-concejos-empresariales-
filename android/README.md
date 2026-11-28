@@ -8,9 +8,9 @@ Build an APK: `./gradlew :app:assembleDebug`. Build a Play bundle: `./gradlew :a
 
 The app loads bundled content through WebViewAssetLoader at a fixed local HTTPS origin. No INTERNET permission or remote navigation is permitted. JavaScript and DOM storage support the local business application. The native bridge uses the Android document picker to export or restore JSON backups and save CSV reports. Android automatic backup is disabled. No analytics or advertising SDK is included.
 
-## Versión 1.0.2 para Android
+## Versión 1.0.3 para Android
 
-El código de versión es 3. La compilación de prueba se identifica como **Beacon Business · Prueba** en Android configurado en español y usa el paquete `com.beaconoftheeagle.businessmanager.debug`. Se puede instalar junto a la aplicación de Google Play. Cada instalación guarda sus propios datos.
+El código de versión es 4. La compilación de prueba se identifica como **Beacon Business · Prueba** en Android configurado en español y usa el paquete `com.beaconoftheeagle.businessmanager.debug`. Se puede instalar junto a la aplicación de Google Play. Cada instalación guarda sus propios datos.
 
 Con un dispositivo de pruebas conectado por USB, ejecuta `./gradlew :app:installDebug`. Comprueba que el panel funciona en modo avión, que permite registrar un ingreso y un gasto, y que los datos persisten al cerrar y volver a abrir la app. Exporta una copia JSON y un informe CSV con el selector de documentos de Android. Abre la copia desde la app, revisa las cantidades antes de restaurar y verifica el resultado en el panel.
 

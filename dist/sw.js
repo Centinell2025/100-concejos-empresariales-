@@ -1,5 +1,5 @@
-const CACHE='beacon-business-102-v1';
-const ASSETS=['./','./index.html','./privacy.html','./style.css','./dashboard.css','./tips.js','./app.js','./business.js','./backup.js','./enhancements.js','./welcome.js','./introduction.js','./priorities.js','./beacon-emblem.png','./i18n.js','./tips-en.js','./tips-it.js','./icon.svg','./manifest.webmanifest'];
+const CACHE='beacon-business-103-v1';
+const ASSETS=['./','./index.html','./privacy.html','./style.css','./dashboard.css','./tips.js','./app.js','./money-input.js','./business.js','./backup.js','./enhancements.js','./welcome.js','./introduction.js','./priorities.js','./beacon-emblem.png','./i18n.js','./tips-en.js','./tips-it.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('beacon-business-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;e.respondWith(fetch(e.request).then(r=>{if(r.ok&&r.type==='basic'){let copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r}).catch(()=>caches.match(e.request).then(r=>r||(e.request.mode==='navigate'?caches.match('./index.html'):Response.error()))))});
